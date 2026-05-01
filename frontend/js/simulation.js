@@ -98,7 +98,7 @@ class SimulationController {
     const time  = `Day ${result.sim_day} ${result.sim_time}`;
 
     ui.updateClock(time);
-    renderer.updateCharacterPosition(charId, result.location);
+    renderer.updateCharacterPosition(charId, result.location, result.activity);
     renderer.setSimTime(result.next_sim_time);
     ui.log(`[${label}] ${result.activity} @ ${result.location}`, "tick");
 
