@@ -2,6 +2,15 @@
  * UI helpers — DOM manipulation and rendering.
  */
 
+const RELATIONSHIP_STATUS_LABEL = {
+  single:      "โสด 💚",
+  dating:      "คบอยู่ 💕",
+  married:     "แต่งงานแล้ว 💍",
+  complicated: "ซับซ้อน 🌀",
+  divorced:    "หย่าแล้ว 💔",
+  widowed:     "ม่าย 🖤",
+};
+
 const EMOTION_CONFIG = [
   { key: "happiness",  label: "Happiness 😊",  cls: "bar-happiness" },
   { key: "stress",     label: "Stress 😰",     cls: "bar-stress" },
@@ -45,11 +54,13 @@ const ui = {
       const card = document.createElement("div");
       card.className = "char-card";
       card.dataset.id = char.id;
+      const statusLabel = RELATIONSHIP_STATUS_LABEL[char.relationship_status] || "โสด 💚";
       card.innerHTML = `
-        <span class="char-avatar">${char.avatar_emoji || "👤"}</span>
+        <span class="char-avatar">${char.avatar_emoji || (char.gender === "female" ? "👩" : char.gender === "male" ? "👨" : "👤")}</span>
         <div class="char-info">
           <div class="char-name">${char.name}${char.nickname ? ` (${char.nickname})` : ""}</div>
-          <div class="char-status muted">${char.occupation || "Unknown"}</div>
+          <div class="char-status muted">${char.occupation || ""}</div>
+          <div class="char-rel-status">${statusLabel}</div>
         </div>
       `;
       card.addEventListener("click", () => ui.selectCharacter(char.id, characters));
@@ -93,14 +104,42 @@ const ui = {
     }
   },
 
-  renderCharacterStateInfo(state) {
+  renderCharacterStateInfo(state, char) {
     const panel = document.getElementById("selected-char-info");
+    const relLabel = char ? (RELATIONSHIP_STATUS_LABEL[char.relationship_status] || "โสด 💚") : "";
     panel.innerHTML = `
-      <p><strong>Status:</strong> ${state.simulation_status}</p>
-      <p><strong>Day ${state.sim_day}</strong> · ${state.current_sim_time}</p>
-      <p><strong>📍</strong> ${state.current_location}</p>
-      <p><strong>💼</strong> ${state.current_activity}</p>
+      <div class="state-row"><span class="state-label">สถานะความรัก</span><span class="state-val rel-badge">${relLabel}</span></div>
+      <div class="state-row"><span class="state-label">วันที่ ${state.sim_day}</span><span class="state-val">${state.current_sim_time}</span></div>
+      <div class="state-row"><span class="state-label">📍</span><span class="state-val">${state.current_location}</span></div>
+      <div class="state-row"><span class="state-label">💼</span><span class="state-val">${state.current_activity}</span></div>
     `;
+  },
+
+  renderRelationships(rels, characters) {
+    let panel = document.getElementById("relationships-panel");
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "relationships-panel";
+      document.getElementById("character-state-panel").appendChild(panel);
+    }
+    if (!rels || rels.length === 0) {
+      panel.innerHTML = `<h2 class="panel-title" style="margin-top:10px">ความสัมพันธ์</h2><p class="muted">ยังไม่มีปฏิสัมพันธ์กับใคร</p>`;
+      return;
+    }
+    const rows = rels.map(r => {
+      const other = characters.find(c => c.id === r.other_character_id);
+      const name  = other ? (other.nickname || other.name) : `#${r.other_character_id}`;
+      const heart = r.closeness >= 80 ? "❤️" : r.closeness >= 60 ? "🧡" : r.closeness >= 40 ? "💛" : r.closeness >= 20 ? "🩶" : "🤍";
+      const trust = Math.round(r.trust_level);
+      const conflict = r.conflict_level > 30 ? `⚔️${Math.round(r.conflict_level)}` : "";
+      return `
+        <div class="rel-row">
+          <span class="rel-name">${name}</span>
+          <span class="rel-label">${r.dynamic_label}</span>
+          <span class="rel-hearts">${heart} ${Math.round(r.closeness)} ${conflict}</span>
+        </div>`;
+    }).join("");
+    panel.innerHTML = `<h2 class="panel-title" style="margin-top:10px">ความสัมพันธ์กับคนอื่น</h2>${rows}`;
   },
 
   showModal(html) {
@@ -125,6 +164,14 @@ const ui = {
           <option value="male">ชาย 👨</option>
           <option value="female">หญิง 👩</option>
         </select>
+        <select class="input-field" id="f-rel-status">
+          <option value="single">โสด 💚</option>
+          <option value="dating">คบอยู่ 💕</option>
+          <option value="married">แต่งงานแล้ว 💍</option>
+          <option value="complicated">ซับซ้อน 🌀</option>
+          <option value="divorced">หย่าแล้ว 💔</option>
+          <option value="widowed">ม่าย 🖤</option>
+        </select>
         <input class="input-field" id="f-emoji" placeholder="Avatar emoji เช่น 👩" maxlength="2" />
         <button type="submit" class="btn-primary btn-full" style="margin-top:8px">สร้างตัวละคร</button>
       </form>
@@ -138,6 +185,7 @@ const ui = {
           age: parseInt(document.getElementById("f-age").value) || null,
           occupation: document.getElementById("f-occupation").value || null,
           gender: document.getElementById("f-gender").value,
+          relationship_status: document.getElementById("f-rel-status").value,
           avatar_emoji: document.getElementById("f-emoji").value || null,
         });
         ui.closeModal();

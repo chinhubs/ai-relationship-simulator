@@ -108,9 +108,14 @@ class SimulationController {
   async refreshState() {
     if (!this.activeCharId) return;
     try {
-      const state = await API.getState(this.activeCharId);
+      const [state, rels] = await Promise.all([
+        API.getState(this.activeCharId),
+        API.listRelationships(this.activeCharId),
+      ]);
+      const char = (app.characters || []).find(c => c.id === this.activeCharId);
       ui.renderEmotions(state.emotions);
-      ui.renderCharacterStateInfo(state);
+      ui.renderCharacterStateInfo(state, char);
+      ui.renderRelationships(rels, app.characters || []);
     } catch (e) { /* state panel not critical */ }
   }
 }
