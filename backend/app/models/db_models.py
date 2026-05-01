@@ -52,7 +52,7 @@ class Character(Base):
     persona: Mapped["PersonaProfile | None"] = relationship("PersonaProfile", back_populates="character", uselist=False)
     state: Mapped["CharacterState | None"] = relationship("CharacterState", back_populates="character", uselist=False)
     emotion_history: Mapped[list["EmotionSnapshot"]] = relationship("EmotionSnapshot", back_populates="character")
-    memories: Mapped[list["Memory"]] = relationship("Memory", back_populates="character")
+    memories: Mapped[list["Memory"]] = relationship("Memory", foreign_keys="Memory.character_id", back_populates="character")
     diary_entries: Mapped[list["DiaryEntry"]] = relationship("DiaryEntry", back_populates="character")
 
 
