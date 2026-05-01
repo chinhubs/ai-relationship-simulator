@@ -14,7 +14,7 @@ echo "=== Updating AI Relationship Simulator ==="
 
 # Pull latest code
 echo "[1/3] Pulling latest code..."
-sudo -u "$SERVICE_USER" git -C "$APP_DIR" pull origin main
+sudo -u "$SERVICE_USER" git -C "$APP_DIR" pull origin master
 
 # Update dependencies (in case requirements.txt changed)
 echo "[2/3] Updating dependencies..."
