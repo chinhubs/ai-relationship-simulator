@@ -6,8 +6,8 @@ const app = {
   characters: [],
 
   async init() {
-    renderer.start();
     this.bindButtons();
+    renderer.start();
     await this.loadCharacters();
     ui.log("AI Relationship Simulator ready", "event");
   },

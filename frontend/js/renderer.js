@@ -146,7 +146,11 @@ class Renderer {
 
   start() {
     if (this._animId) return;
-    const loop = () => { this._draw(); this.frame++; this._animId = requestAnimationFrame(loop); };
+    const loop = () => {
+      try { this._draw(); } catch(e) { console.error("Renderer draw error:", e); }
+      this.frame++;
+      this._animId = requestAnimationFrame(loop);
+    };
     loop();
   }
   stop() {

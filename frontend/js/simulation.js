@@ -51,12 +51,29 @@ class SimulationController {
   // ── Manual single tick for active character ───────────────────────────────
 
   async tick() {
-    if (!this.activeCharId) { ui.log("เลือกตัวละครก่อน", "error"); return; }
+    const charId = this.activeCharId || (app.characters?.length > 0 ? app.characters[0].id : null);
+    if (!charId) { ui.log("ยังไม่มีตัวละคร", "error"); return; }
+    // Auto-select if wasn't selected
+    if (!this.activeCharId) {
+      this.activeCharId = charId;
+      ui.selectCharacter(charId, app.characters);
+    }
     try {
-      const result = await API.runTick(this.activeCharId);
-      this._applyTickResult(this.activeCharId, result);
+      const result = await API.runTick(charId);
+      this._applyTickResult(charId, result);
       await this.refreshState();
-    } catch (e) { ui.log(`Tick error: ${e.message}`, "error"); }
+    } catch (e) {
+      if (e.message?.toLowerCase().includes("not running")) {
+        try {
+          await API.controlSim(charId, "start");
+          const result = await API.runTick(charId);
+          this._applyTickResult(charId, result);
+          await this.refreshState();
+        } catch (e2) { ui.log(`Tick error: ${e2.message}`, "error"); }
+      } else {
+        ui.log(`Tick error: ${e.message}`, "error");
+      }
+    }
   }
 
   // ── Auto world tick — cycles through all characters ───────────────────────
