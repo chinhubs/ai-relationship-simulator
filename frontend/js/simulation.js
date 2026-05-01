@@ -8,7 +8,7 @@ class SimulationController {
     this.relatedCharId = null;
     this.isRunning = false;
     this.autoTickInterval = null;
-    this.AUTO_TICK_MS = 5000;
+    this.AUTO_TICK_MS = 10000; // 10 วิ = 1 ชั่วโมง sim time
   }
 
   setActiveCharacter(charId) {
@@ -27,6 +27,7 @@ class SimulationController {
       ui.log(`Simulation started — Day ${res.sim_day} ${res.sim_time}`, "event");
       ui.updateSimButtons(true);
       await this.refreshState();
+      this.startAutoTick();
     } catch (e) { ui.log(`Start failed: ${e.message}`, "error"); }
   }
 
