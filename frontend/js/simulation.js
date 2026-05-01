@@ -84,6 +84,7 @@ class SimulationController {
     }
 
     renderer.updateCharacterPosition(this.activeCharId, result.location);
+    renderer.setSimTime(result.next_sim_time);
   }
 
   startAutoTick() {
