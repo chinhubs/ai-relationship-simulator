@@ -51,6 +51,7 @@ class Renderer {
       targetX: 300 + i * 55,
       targetY: 345,
       bobOffset: i * 0.9,
+      isFemale: (c.gender === "female"),
     }));
   }
 
@@ -364,6 +365,11 @@ class Renderer {
 
   // ── Chibi character sprite ────────────────────────────────────────────────
   _drawCharacter(char) {
+    if (char.isFemale) return this._drawFemale(char);
+    this._drawMale(char);
+  }
+
+  _drawMale(char) {
     const { ctx, frame } = this;
     const x = Math.round(char.px);
     const y = Math.round(char.py);
@@ -377,62 +383,156 @@ class Renderer {
     ctx.fillStyle="rgba(0,0,0,0.18)";
     ctx.beginPath(); ctx.ellipse(x,y+4,11,3,0,0,Math.PI*2); ctx.fill();
 
-    // Shoes
+    // Shoes (black, square)
     ctx.fillStyle="#111";
     ctx.fillRect(x-8,y-1+b,7,4); ctx.fillRect(x+1,y-1+b,7,4);
 
-    // Pants / skirt
+    // Pants (two legs)
     ctx.fillStyle=pa;
-    ctx.fillRect(x-7,y-10+b,5,10); ctx.fillRect(x+2,y-10+b,5,10);
+    ctx.fillRect(x-7,y-11+b,5,11); ctx.fillRect(x+2,y-11+b,5,11);
 
     // Belt
-    ctx.fillStyle=sh;
-    ctx.fillRect(x-7,y-11+b,14,3);
+    ctx.fillStyle="#4a3020"; ctx.fillRect(x-7,y-12+b,14,3);
+    ctx.fillStyle="#f5c040"; ctx.fillRect(x-1,y-12+b,2,3); // belt buckle
 
-    // Shirt body
-    ctx.fillStyle=sh; ctx.fillRect(x-7,y-24+b,14,14);
-
-    // Shirt collar
-    ctx.fillStyle="#f5e8d8"; ctx.fillRect(x-2,y-24+b,4,4);
+    // Shirt
+    ctx.fillStyle=sh; ctx.fillRect(x-7,y-25+b,14,14);
+    // Shirt collar (V-neck)
+    ctx.fillStyle="#f5e8d8"; ctx.fillRect(x-2,y-25+b,4,4);
+    // Shirt pocket
+    ctx.fillStyle="rgba(0,0,0,0.15)"; ctx.fillRect(x+2,y-22+b,4,4);
 
     // Arms
     ctx.fillStyle=sh;
-    ctx.fillRect(x-10,y-23+b,4,9); ctx.fillRect(x+6,y-23+b,4,9);
+    ctx.fillRect(x-11,y-24+b,4,10); ctx.fillRect(x+7,y-24+b,4,10);
     ctx.fillStyle=sk;
-    ctx.fillRect(x-10,y-15+b,4,5); ctx.fillRect(x+6,y-15+b,4,5);
+    ctx.fillRect(x-11,y-15+b,4,6); ctx.fillRect(x+7,y-15+b,4,6);
 
     // Head
-    ctx.fillStyle=sk; ctx.fillRect(x-6,y-36+b,12,13);
+    ctx.fillStyle=sk; ctx.fillRect(x-6,y-37+b,12,13);
 
-    // Hair top
+    // Hair (short, neat — male)
     ctx.fillStyle=ha;
-    ctx.fillRect(x-7,y-39+b,14,7);
-    ctx.fillRect(x-7,y-36+b,3,10);
-    ctx.fillRect(x+4,y-36+b,3,7);
+    ctx.fillRect(x-7,y-40+b,14,6);   // top
+    ctx.fillRect(x-7,y-38+b,3,8);    // left side (short)
+    ctx.fillRect(x+4,y-38+b,3,5);    // right side
 
-    // Eyes
+    // Eyes (normal size)
     ctx.fillStyle="#1a1a1a";
-    ctx.fillRect(x-4,y-31+b,2,2); ctx.fillRect(x+2,y-31+b,2,2);
+    ctx.fillRect(x-4,y-32+b,2,2); ctx.fillRect(x+2,y-32+b,2,2);
+    ctx.fillStyle="#fff";
+    ctx.fillRect(x-4,y-33+b,1,1); ctx.fillRect(x+2,y-33+b,1,1);
+
+    // Eyebrows (thicker, male)
+    ctx.fillStyle=ha;
+    ctx.fillRect(x-5,y-35+b,4,1); ctx.fillRect(x+1,y-35+b,4,1);
+
+    // Mouth
+    ctx.fillStyle="#b06040"; ctx.fillRect(x-2,y-27+b,4,1);
+
+    this._drawNameTag(ctx, char, x, y, b);
+  }
+
+  _drawFemale(char) {
+    const { ctx, frame } = this;
+    const x = Math.round(char.px);
+    const y = Math.round(char.py);
+    const b = Math.round(Math.sin(frame*0.07 + char.bobOffset) * 1.5);
+    const sk = char.skinColor || "#f5d0a0";
+    const sh = char.shirtColor || "#f76ab7";
+    const pa = char.pantsColor || "#9b7dff";
+    const ha = char.hairColor  || "#1a1008";
+
+    // Shadow
+    ctx.fillStyle="rgba(0,0,0,0.18)";
+    ctx.beginPath(); ctx.ellipse(x,y+4,11,3,0,0,Math.PI*2); ctx.fill();
+
+    // Shoes (rounded, feminine)
+    ctx.fillStyle="#cc3060";
+    ctx.fillRect(x-7,y-1+b,6,4); ctx.fillRect(x+1,y-1+b,6,4);
+    ctx.fillStyle="#aa1840";
+    ctx.fillRect(x-7,y-1+b,1,4); ctx.fillRect(x+7,y-1+b,1,4);
+
+    // Legs (skin — skirt shows legs below)
+    ctx.fillStyle=sk;
+    ctx.fillRect(x-5,y-8+b,4,8); ctx.fillRect(x+1,y-8+b,4,8);
+
+    // Skirt (wider trapezoid shape)
+    ctx.fillStyle=pa;
+    ctx.beginPath();
+    ctx.moveTo(x-7,y-20+b);
+    ctx.lineTo(x+7,y-20+b);
+    ctx.lineTo(x+10,y-8+b);
+    ctx.lineTo(x-10,y-8+b);
+    ctx.closePath(); ctx.fill();
+    // Skirt hem detail
+    ctx.fillStyle="rgba(255,255,255,0.25)";
+    ctx.fillRect(x-10,y-10+b,20,2);
+
+    // Blouse/top
+    ctx.fillStyle=sh; ctx.fillRect(x-6,y-25+b,12,6);
+    // Waist ribbon
+    ctx.fillStyle="rgba(255,255,255,0.3)"; ctx.fillRect(x-6,y-20+b,12,2);
+
+    // Arms (slender)
+    ctx.fillStyle=sh;
+    ctx.fillRect(x-9,y-24+b,3,8); ctx.fillRect(x+6,y-24+b,3,8);
+    ctx.fillStyle=sk;
+    ctx.fillRect(x-9,y-17+b,3,6); ctx.fillRect(x+6,y-17+b,3,6);
+
+    // Head (slightly rounder)
+    ctx.fillStyle=sk; ctx.fillRect(x-6,y-38+b,12,14);
+
+    // Long hair (extends past shoulders)
+    ctx.fillStyle=ha;
+    ctx.fillRect(x-7,y-42+b,14,7);   // top
+    ctx.fillRect(x-8,y-38+b,3,18);   // left long hair
+    ctx.fillRect(x+5,y-38+b,3,18);   // right long hair
+    ctx.fillRect(x-7,y-38+b,2,10);   // left inner
+    // Hair highlight
+    ctx.fillStyle="rgba(255,255,255,0.15)";
+    ctx.fillRect(x-3,y-41+b,5,3);
+
+    // Eyes (larger, feminine — with lashes)
+    ctx.fillStyle="#1a1a1a";
+    ctx.fillRect(x-5,y-33+b,3,3); ctx.fillRect(x+2,y-33+b,3,3);
+    // Lashes (top)
+    ctx.fillRect(x-6,y-34+b,1,2); ctx.fillRect(x+5,y-34+b,1,2);
+    ctx.fillRect(x-5,y-35+b,1,1); ctx.fillRect(x+4,y-35+b,1,1);
+    // Eye color
+    ctx.fillStyle="#5a3090";
+    ctx.fillRect(x-4,y-33+b,2,2); ctx.fillRect(x+2,y-33+b,2,2);
     // Eye shine
     ctx.fillStyle="#fff";
-    ctx.fillRect(x-4,y-32+b,1,1); ctx.fillRect(x+2,y-32+b,1,1);
+    ctx.fillRect(x-4,y-34+b,1,1); ctx.fillRect(x+3,y-34+b,1,1);
 
-    // Blush
-    ctx.fillStyle="rgba(255,160,140,0.45)";
-    ctx.fillRect(x-5,y-28+b,3,2); ctx.fillRect(x+2,y-28+b,3,2);
+    // Eyebrows (thin, arched)
+    ctx.fillStyle=ha;
+    ctx.fillRect(x-5,y-37+b,3,1); ctx.fillRect(x+1,y-37+b,3,1);
 
-    // Smile
-    ctx.fillStyle="#b06040"; ctx.fillRect(x-2,y-26+b,4,1);
+    // Blush (stronger for female)
+    ctx.fillStyle="rgba(255,130,150,0.55)";
+    ctx.fillRect(x-6,y-30+b,3,2); ctx.fillRect(x+3,y-30+b,3,2);
 
-    // Name label
+    // Mouth (small, with lip color)
+    ctx.fillStyle="#d05060"; ctx.fillRect(x-2,y-28+b,4,2);
+    ctx.fillStyle="#e07080"; ctx.fillRect(x-1,y-28+b,2,1);
+
+    this._drawNameTag(ctx, char, x, y, b);
+  }
+
+  _drawNameTag(ctx, char, x, y, b) {
     const name = char.nickname || char.name.split(" ")[0];
     ctx.font = "9px 'Courier New'"; ctx.textAlign = "center";
     const nw = ctx.measureText(name).width + 10;
-    ctx.fillStyle="rgba(30,15,5,0.65)";
+    ctx.fillStyle = "rgba(30,15,5,0.65)";
     ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(x-nw/2, y-52+b, nw, 13, 3) : ctx.fillRect(x-nw/2, y-52+b, nw, 13);
+    ctx.roundRect
+      ? ctx.roundRect(x - nw/2, y - 56+b, nw, 13, 3)
+      : ctx.fillRect(x - nw/2, y - 56+b, nw, 13);
     ctx.fill();
-    ctx.fillStyle="#fff"; ctx.fillText(name, x, y-42+b);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(name, x, y - 46+b);
   }
 
   showSpeechBubble(text) {

@@ -45,6 +45,7 @@ class Character(Base):
     age: Mapped[int | None] = mapped_column(Integer)
     occupation: Mapped[str | None] = mapped_column(String(200))
     avatar_emoji: Mapped[str | None] = mapped_column(String(10))
+    gender: Mapped[str] = mapped_column(String(20), default="unspecified")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

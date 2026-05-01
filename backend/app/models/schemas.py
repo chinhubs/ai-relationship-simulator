@@ -8,6 +8,7 @@ class CharacterCreate(BaseModel):
     age: int | None = None
     occupation: str | None = None
     avatar_emoji: str | None = None
+    gender: str = "unspecified"
 
 
 class CharacterRead(BaseModel):
@@ -17,6 +18,7 @@ class CharacterRead(BaseModel):
     age: int | None
     occupation: str | None
     avatar_emoji: str | None
+    gender: str
     is_active: bool
     created_at: datetime
 

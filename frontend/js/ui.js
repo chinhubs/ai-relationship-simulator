@@ -114,14 +114,19 @@ const ui = {
 
   showAddCharacterForm() {
     this.showModal(`
-      <h2 style="color:var(--accent);margin-bottom:12px">Add Character</h2>
+      <h2 style="color:var(--accent);margin-bottom:12px">เพิ่มตัวละคร</h2>
       <form id="form-add-char">
-        <input class="input-field" id="f-name" placeholder="Full name" required />
-        <input class="input-field" id="f-nickname" placeholder="Nickname (optional)" />
-        <input class="input-field" id="f-age" placeholder="Age" type="number" min="18" max="60" />
-        <input class="input-field" id="f-occupation" placeholder="Occupation" />
-        <input class="input-field" id="f-emoji" placeholder="Avatar emoji (e.g. 👩)" maxlength="2" />
-        <button type="submit" class="btn-primary btn-full" style="margin-top:8px">Create Character</button>
+        <input class="input-field" id="f-name" placeholder="ชื่อเต็ม" required />
+        <input class="input-field" id="f-nickname" placeholder="ชื่อเล่น (ถ้ามี)" />
+        <input class="input-field" id="f-age" placeholder="อายุ" type="number" min="18" max="60" />
+        <input class="input-field" id="f-occupation" placeholder="อาชีพ" />
+        <select class="input-field" id="f-gender">
+          <option value="unspecified">เพศ (ไม่ระบุ)</option>
+          <option value="male">ชาย 👨</option>
+          <option value="female">หญิง 👩</option>
+        </select>
+        <input class="input-field" id="f-emoji" placeholder="Avatar emoji เช่น 👩" maxlength="2" />
+        <button type="submit" class="btn-primary btn-full" style="margin-top:8px">สร้างตัวละคร</button>
       </form>
     `);
     document.getElementById("form-add-char").addEventListener("submit", async (e) => {
@@ -132,6 +137,7 @@ const ui = {
           nickname: document.getElementById("f-nickname").value || null,
           age: parseInt(document.getElementById("f-age").value) || null,
           occupation: document.getElementById("f-occupation").value || null,
+          gender: document.getElementById("f-gender").value,
           avatar_emoji: document.getElementById("f-emoji").value || null,
         });
         ui.closeModal();
