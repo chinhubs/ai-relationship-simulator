@@ -1,0 +1,58 @@
+substitutions:
+  _REGION: asia-southeast1
+  _SERVICE: ai-relationship-simulator
+  _REPO: ai-sim-repo
+  _IMAGE: ai-sim-backend
+  _SQL_INSTANCE: ai-sim-db
+
+steps:
+  # 1. Build Docker image
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$COMMIT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:latest
+      - .
+    id: build
+
+  # 2. Push to Artifact Registry
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}
+    id: push
+    waitFor: [build]
+
+  # 3. Deploy to Cloud Run
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - $_SERVICE
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$COMMIT_SHA
+      - --region=$_REGION
+      - --platform=managed
+      - --allow-unauthenticated
+      - --add-cloudsql-instances=$PROJECT_ID:${_REGION}:${_SQL_INSTANCE}
+      - --set-secrets=OPENAI_API_KEY=openai-api-key:latest,DATABASE_URL=database-url:latest,APP_SECRET_KEY=app-secret-key:latest
+      - --set-env-vars=DEBUG=false
+      - --service-account=ai-sim-runner@$PROJECT_ID.iam.gserviceaccount.com
+      - --memory=512Mi
+      - --cpu=1
+      - --min-instances=0
+      - --max-instances=5
+      - --concurrency=80
+      - --timeout=300
+    id: deploy
+    waitFor: [push]
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$COMMIT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY

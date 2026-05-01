@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Relationship Simulator</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <div class="header-left">
+        <span class="logo-pixel">💫</span>
+        <h1>AI Relationship Simulator</h1>
+      </div>
+      <div class="header-right">
+        <span id="sim-clock" class="pixel-text">Day 1 · 06:00</span>
+        <button id="btn-help" class="btn-icon" title="Help">?</button>
+      </div>
+    </header>
+
+    <!-- Main layout -->
+    <main id="main-layout">
+
+      <!-- Left panel: Characters -->
+      <aside id="panel-characters">
+        <h2 class="panel-title">Characters</h2>
+        <div id="character-list"></div>
+        <button id="btn-add-character" class="btn-primary btn-full">+ Add Character</button>
+      </aside>
+
+      <!-- Center: Canvas world -->
+      <section id="panel-world">
+        <canvas id="world-canvas" width="600" height="400"></canvas>
+        <div id="world-overlay">
+          <div id="speech-bubble" class="hidden"></div>
+        </div>
+        <div id="sim-controls">
+          <button id="btn-start" class="btn-sim btn-green">▶ Start</button>
+          <button id="btn-pause" class="btn-sim btn-yellow" disabled>⏸ Pause</button>
+          <button id="btn-tick" class="btn-sim btn-blue">⏭ Tick</button>
+          <button id="btn-stop" class="btn-sim btn-red" disabled>■ Stop</button>
+        </div>
+      </section>
+
+      <!-- Right panel: Status + Events -->
+      <aside id="panel-status">
+        <div id="character-state-panel">
+          <h2 class="panel-title">Character State</h2>
+          <div id="selected-char-info">
+            <p class="muted">Select a character</p>
+          </div>
+          <div id="emotion-bars"></div>
+        </div>
+
+        <div id="event-panel">
+          <h2 class="panel-title">Inject Event</h2>
+          <form id="event-form">
+            <select id="event-target" class="input-field"></select>
+            <input id="event-title" class="input-field" placeholder="Event title" required />
+            <textarea id="event-description" class="input-field" placeholder="What happened?" rows="3" required></textarea>
+            <select id="event-type" class="input-field">
+              <option value="confession">Confession 💌</option>
+              <option value="argument">Argument 😤</option>
+              <option value="gift">Gift 🎁</option>
+              <option value="ghosted">Ghosted 👻</option>
+              <option value="good_news">Good News 🎉</option>
+              <option value="bad_news">Bad News 😢</option>
+              <option value="betrayal">Betrayal 💔</option>
+              <option value="reconciliation">Reconciliation 🤝</option>
+              <option value="surprise_visit">Surprise Visit 🚪</option>
+            </select>
+            <select id="event-severity" class="input-field">
+              <option value="minor">Minor</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="major">Major</option>
+              <option value="critical">Critical</option>
+            </select>
+            <button type="submit" class="btn-primary btn-full">💉 Inject Event</button>
+          </form>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Bottom panel: Activity log -->
+    <footer id="activity-log">
+      <h3>Activity Log</h3>
+      <div id="log-entries"></div>
+    </footer>
+  </div>
+
+  <!-- Modals -->
+  <div id="modal-overlay" class="hidden">
+    <div id="modal-box">
+      <button id="modal-close" class="btn-icon">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/simulation.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

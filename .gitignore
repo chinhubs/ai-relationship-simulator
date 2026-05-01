@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# SQLite database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Secrets / env
+.env
+.env.local
+.env.production
+*.key
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# GCP
+service-account*.json
+*-credentials.json
