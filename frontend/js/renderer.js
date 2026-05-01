@@ -328,7 +328,7 @@ class Renderer {
 
   _drawBush(x, y) {
     const { ctx } = this;
-    [[0,0,13,"#3a7828"],[−8,3,10,"#4a9835"],[8,3,10,"#4a9835"]].forEach(([dx,dy,r,c])=>{
+    [[0,0,13,"#3a7828"],[-8,3,10,"#4a9835"],[8,3,10,"#4a9835"]].forEach(([dx,dy,r,c])=>{
       ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill();
     });
   }
