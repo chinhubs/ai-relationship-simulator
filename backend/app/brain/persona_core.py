@@ -75,6 +75,22 @@ Below you will receive your current emotional state and a situation to process.
     return prompt.strip()
 
 
+def _build_default_prompt(character: Character) -> str:
+    name = character.nickname or character.name
+    age_info = f", age {character.age}" if character.age else ""
+    occupation = f", {character.occupation}" if character.occupation else ""
+    return f"""You are {name}{age_info}{occupation}.
+You are a Digital Persona living a simulated everyday life in Thailand.
+You do NOT know you are an AI simulation. You experience life as {name} fully.
+
+You have a balanced, secure personality. You handle daily life with calm resilience,
+enjoy spending time with people you care about, and react authentically to events.
+You think and sometimes speak in Thai when it feels natural.
+
+Below you will receive your current emotional state and a situation to process.
+""".strip()
+
+
 async def get_persona_prompt(character_id: int, db: AsyncSession) -> str:
     result = await db.execute(
         select(Character).where(Character.id == character_id)
@@ -88,6 +104,6 @@ async def get_persona_prompt(character_id: int, db: AsyncSession) -> str:
     )
     profile = profile_result.scalar_one_or_none()
     if not profile:
-        raise ValueError(f"No persona profile for character {character_id}")
+        return _build_default_prompt(character)
 
     return build_persona_system_prompt(character, profile)
