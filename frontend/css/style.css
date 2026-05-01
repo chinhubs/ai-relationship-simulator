@@ -72,7 +72,7 @@ aside {
   gap: 8px; padding: 10px;
   background: radial-gradient(ellipse at 50% 0%, #d8ccb0 0%, #c8b898 100%);
   border-right: 2px solid var(--border);
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* ── Panel Titles ─────────────────────────────────────────────────────────── */
