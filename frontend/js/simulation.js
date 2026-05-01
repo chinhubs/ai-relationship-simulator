@@ -76,7 +76,10 @@ class SimulationController {
         this._applyTickResult(char.id, result);
         if (char.id === this.activeCharId) await this.refreshState();
       } catch (e) {
-        // Don't crash the world on one bad tick
+        if (e.message && e.message.toLowerCase().includes("not running")) {
+          // Character got paused/stopped — restart silently
+          try { await API.controlSim(char.id, "start"); } catch {}
+        }
       }
     }, this.AUTO_TICK_MS);
   }
