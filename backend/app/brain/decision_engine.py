@@ -10,8 +10,9 @@ Given the character's current state + incoming event, Claude decides:
 import json
 import re
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from ..models.db_models import CharacterState
+from ..models.db_models import Character, CharacterState
 from ..brain.emotion_engine import EMOTION_KEYS, get_mood_label
 from ..brain.memory_system import build_memory_context
 from ..brain.persona_core import get_persona_prompt
@@ -25,6 +26,7 @@ def _build_volatile_prompt(
     sim_time: str,
     sim_day: int,
     mood_label: str,
+    character_name: str = "yourself",
 ) -> str:
     emotion_snapshot = "\n".join(
         f"  {k}: {getattr(state, k):.0f}/100"
@@ -45,7 +47,7 @@ Emotion levels:
 {event_description}
 
 ═══ YOUR TASK ═══
-As {state.character.name if hasattr(state, 'character') and state.character else 'yourself'}, respond to this situation authentically.
+As {character_name}, respond to this situation authentically.
 
 Return a JSON object with exactly these keys:
 {{
@@ -101,6 +103,10 @@ async def run_decision(
     sim_time: str,
     related_character_id: int | None = None,
 ) -> dict:
+    char_result = await db.execute(select(Character).where(Character.id == character_id))
+    char = char_result.scalar_one_or_none()
+    character_name = (char.nickname or char.name) if char else "yourself"
+
     persona_prompt = await get_persona_prompt(character_id, db)
     memory_context = await build_memory_context(
         db, character_id, sim_day, related_character_id=related_character_id
@@ -114,13 +120,17 @@ async def run_decision(
         sim_time=sim_time,
         sim_day=sim_day,
         mood_label=mood_label,
+        character_name=character_name,
     )
 
-    raw_response = await call_brain(
-        system_prompt=persona_prompt,
-        user_message=volatile_prompt,
-        cache_persona=True,
-        max_tokens=1500,
-    )
+    try:
+        raw_response = await call_brain(
+            system_prompt=persona_prompt,
+            user_message=volatile_prompt,
+            cache_persona=True,
+            max_tokens=1500,
+        )
+    except Exception:
+        raw_response = ""  # AI unavailable → fall back to "does nothing"
 
     return _parse_decision_response(raw_response)
