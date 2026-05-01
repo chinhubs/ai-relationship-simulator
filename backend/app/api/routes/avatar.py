@@ -124,7 +124,10 @@ async def submit_questionnaire(
         raise HTTPException(status_code=404, detail="Character not found")
 
     answers_json = json.dumps(data.answers, ensure_ascii=False)
-    analysis = await analyze_persona_answers(answers_json)
+    try:
+        analysis = await analyze_persona_answers(answers_json)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"AI analysis failed: {exc}") from exc
 
     existing = await db.execute(
         select(PersonaProfile).where(PersonaProfile.character_id == character_id)
@@ -132,26 +135,26 @@ async def submit_questionnaire(
     profile = existing.scalar_one_or_none()
 
     if profile is None:
-        profile = PersonaProfile(character_id=character_id)
+        profile = PersonaProfile(character_id=character_id, calibration_version=0)
         db.add(profile)
+
+    scores = analysis.get("attachment_scores", {})
+    best_attachment = max(scores.items(), key=lambda x: x[1])[0] if scores else "secure"
 
     profile.questionnaire_level = data.level
     profile.raw_answers = data.answers
-    profile.personality_core = analysis.get("personality_core", {})
-    profile.emotional_patterns = analysis.get("emotional_patterns", {})
-    profile.attachment_style = (
-        analysis.get("attachment_scores", {}) and
-        max(analysis.get("attachment_scores", {}).items(), key=lambda x: x[1], default=("secure", 0))[0]
-    ) or "secure"
-    profile.attachment_scores = analysis.get("attachment_scores", {})
+    profile.personality_core    = analysis.get("personality_core", {})
+    profile.emotional_patterns  = analysis.get("emotional_patterns", {})
+    profile.attachment_style    = best_attachment
+    profile.attachment_scores   = scores
     profile.communication_style = analysis.get("communication_style", {})
-    profile.conflict_behavior = analysis.get("conflict_behavior", {})
-    profile.love_languages = analysis.get("love_languages", {})
-    profile.trigger_points = analysis.get("trigger_points", {})
+    profile.conflict_behavior   = analysis.get("conflict_behavior", {})
+    profile.love_languages      = analysis.get("love_languages", {})
+    profile.trigger_points      = analysis.get("trigger_points", {})
     profile.daily_life_patterns = analysis.get("daily_life_patterns", {})
-    profile.core_values = analysis.get("core_values", {})
-    profile.boundaries = analysis.get("boundaries", {})
-    profile.calibration_version += 1
+    profile.core_values         = analysis.get("core_values", {})
+    profile.boundaries          = analysis.get("boundaries", {})
+    profile.calibration_version = (profile.calibration_version or 0) + 1
 
     await db.commit()
     await db.refresh(profile)
