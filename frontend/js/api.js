@@ -20,7 +20,8 @@ const API = {
   createCharacter: (data) => apiCall("POST", "/avatars", data),
   listCharacters:  ()     => apiCall("GET",  "/avatars"),
   getCharacter:    (id)   => apiCall("GET",  `/avatars/${id}`),
-  deleteCharacter: (id)   => apiCall("DELETE", `/avatars/${id}`),
+  updateCharacter: (id, data) => apiCall("PATCH", `/avatars/${id}`, data),
+  deleteCharacter: (id)       => apiCall("DELETE", `/avatars/${id}`),
 
   // Questionnaire
   getQuestionnaire: (id, level = 2) => apiCall("GET", `/avatars/${id}/questionnaire?level=${level}`),

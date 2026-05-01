@@ -62,8 +62,23 @@ const ui = {
           <div class="char-status muted">${char.occupation || ""}</div>
           <div class="char-rel-status">${statusLabel}</div>
         </div>
+        <div class="char-actions">
+          <button class="btn-char-action btn-edit" title="แก้ไข" data-id="${char.id}">✏️</button>
+          <button class="btn-char-action btn-del"  title="ลบ"    data-id="${char.id}">🗑️</button>
+        </div>
       `;
-      card.addEventListener("click", () => ui.selectCharacter(char.id, characters));
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(".char-actions")) return;
+        ui.selectCharacter(char.id, characters);
+      });
+      card.querySelector(".btn-edit").addEventListener("click", (e) => {
+        e.stopPropagation();
+        ui.showEditCharacterForm(char);
+      });
+      card.querySelector(".btn-del").addEventListener("click", (e) => {
+        e.stopPropagation();
+        ui.confirmDeleteCharacter(char);
+      });
       container.appendChild(card);
 
       const opt = document.createElement("option");
@@ -149,6 +164,76 @@ const ui = {
 
   closeModal() {
     document.getElementById("modal-overlay").classList.add("hidden");
+  },
+
+  showEditCharacterForm(char) {
+    this.showModal(`
+      <h2 style="color:var(--accent);margin-bottom:12px">✏️ แก้ไขตัวละคร</h2>
+      <form id="form-edit-char">
+        <input class="input-field" id="e-name"       value="${char.name}"                placeholder="ชื่อเต็ม" required />
+        <input class="input-field" id="e-nickname"   value="${char.nickname || ""}"      placeholder="ชื่อเล่น" />
+        <input class="input-field" id="e-age"        value="${char.age || ""}"           placeholder="อายุ" type="number" min="18" max="60" />
+        <input class="input-field" id="e-occupation" value="${char.occupation || ""}"    placeholder="อาชีพ" />
+        <select class="input-field" id="e-gender">
+          <option value="unspecified" ${char.gender==="unspecified"?"selected":""}>เพศ (ไม่ระบุ)</option>
+          <option value="male"        ${char.gender==="male"       ?"selected":""}>ชาย 👨</option>
+          <option value="female"      ${char.gender==="female"     ?"selected":""}>หญิง 👩</option>
+        </select>
+        <select class="input-field" id="e-rel-status">
+          <option value="single"      ${char.relationship_status==="single"     ?"selected":""}>โสด 💚</option>
+          <option value="dating"      ${char.relationship_status==="dating"     ?"selected":""}>คบอยู่ 💕</option>
+          <option value="married"     ${char.relationship_status==="married"    ?"selected":""}>แต่งงานแล้ว 💍</option>
+          <option value="complicated" ${char.relationship_status==="complicated"?"selected":""}>ซับซ้อน 🌀</option>
+          <option value="divorced"    ${char.relationship_status==="divorced"   ?"selected":""}>หย่าแล้ว 💔</option>
+          <option value="widowed"     ${char.relationship_status==="widowed"    ?"selected":""}>ม่าย 🖤</option>
+        </select>
+        <input class="input-field" id="e-emoji" value="${char.avatar_emoji || ""}" placeholder="Avatar emoji เช่น 👩" maxlength="2" />
+        <button type="submit" class="btn-primary btn-full" style="margin-top:8px">💾 บันทึก</button>
+      </form>
+    `);
+    document.getElementById("form-edit-char").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await API.updateCharacter(char.id, {
+          name:                document.getElementById("e-name").value,
+          nickname:            document.getElementById("e-nickname").value   || null,
+          age:                 parseInt(document.getElementById("e-age").value) || null,
+          occupation:          document.getElementById("e-occupation").value || null,
+          gender:              document.getElementById("e-gender").value,
+          relationship_status: document.getElementById("e-rel-status").value,
+          avatar_emoji:        document.getElementById("e-emoji").value      || null,
+        });
+        ui.closeModal();
+        ui.log(`แก้ไขตัวละคร: ${char.name}`, "event");
+        await app.loadCharacters();
+      } catch (err) {
+        ui.log(`Error: ${err.message}`, "error");
+      }
+    });
+  },
+
+  confirmDeleteCharacter(char) {
+    const name = char.nickname || char.name;
+    this.showModal(`
+      <h2 style="color:var(--red);margin-bottom:12px">🗑️ ลบตัวละคร</h2>
+      <p style="margin-bottom:16px">ต้องการลบ <strong>${name}</strong> ออกจากการจำลองใช่ไหม?<br>
+      <span class="muted">(ข้อมูลทั้งหมดของตัวละครนี้จะถูกปิดใช้งาน)</span></p>
+      <div style="display:flex;gap:8px">
+        <button id="btn-confirm-del" class="btn-sim btn-red btn-full">🗑️ ลบ</button>
+        <button id="btn-cancel-del"  class="btn-primary btn-full">ยกเลิก</button>
+      </div>
+    `);
+    document.getElementById("btn-confirm-del").addEventListener("click", async () => {
+      try {
+        await API.deleteCharacter(char.id);
+        ui.closeModal();
+        ui.log(`ลบตัวละคร: ${name}`, "event");
+        await app.loadCharacters();
+      } catch (err) {
+        ui.log(`Error: ${err.message}`, "error");
+      }
+    });
+    document.getElementById("btn-cancel-del").addEventListener("click", () => ui.closeModal());
   },
 
   showAddCharacterForm() {

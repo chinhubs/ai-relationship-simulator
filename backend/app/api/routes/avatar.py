@@ -6,7 +6,7 @@ from sqlalchemy import select
 from ...core.database import get_db
 from ...models.db_models import Character, PersonaProfile, CharacterState, SimulationStatus
 from ...models.schemas import (
-    CharacterCreate, CharacterRead,
+    CharacterCreate, CharacterRead, CharacterUpdate,
     QuestionnaireSubmit, PersonaProfileRead,
 )
 from ...questionnaire.persona_intake import get_questions_for_level, serialize_questions
@@ -44,6 +44,19 @@ async def get_character(character_id: int, db: AsyncSession = Depends(get_db)):
     char = result.scalar_one_or_none()
     if not char:
         raise HTTPException(status_code=404, detail="Character not found")
+    return char
+
+
+@router.patch("/{character_id}", response_model=CharacterRead)
+async def update_character(character_id: int, data: CharacterUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Character).where(Character.id == character_id))
+    char = result.scalar_one_or_none()
+    if not char:
+        raise HTTPException(status_code=404, detail="Character not found")
+    for field, value in data.model_dump(exclude_none=True).items():
+        setattr(char, field, value)
+    await db.commit()
+    await db.refresh(char)
     return char
 
 

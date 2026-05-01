@@ -27,6 +27,16 @@ class CharacterRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class CharacterUpdate(BaseModel):
+    name: str | None = None
+    nickname: str | None = None
+    age: int | None = None
+    occupation: str | None = None
+    avatar_emoji: str | None = None
+    gender: str | None = None
+    relationship_status: str | None = None
+
+
 class EmotionState(BaseModel):
     happiness: float = Field(ge=0, le=100, default=70.0)
     stress: float = Field(ge=0, le=100, default=30.0)
