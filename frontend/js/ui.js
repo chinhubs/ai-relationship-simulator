@@ -59,6 +59,7 @@ const ui = {
       const partnerLine = partner
         ? `<div class="char-partner-line">❤️ กับ ${partner.nickname || partner.name}</div>`
         : "";
+      const hasPersona = char._hasPersona;
       card.innerHTML = `
         <span class="char-avatar">${char.avatar_emoji || (char.gender === "female" ? "👩" : char.gender === "male" ? "👨" : "👤")}</span>
         <div class="char-info">
@@ -67,13 +68,18 @@ const ui = {
           <div class="char-rel-status">${statusLabel}${partnerLine}</div>
         </div>
         <div class="char-actions">
-          <button class="btn-char-action btn-edit" title="แก้ไข" data-id="${char.id}">✏️</button>
-          <button class="btn-char-action btn-del"  title="ลบ"    data-id="${char.id}">🗑️</button>
+          <button class="btn-char-action btn-quiz" title="ทดสอบบุคลิก" data-id="${char.id}">📋</button>
+          <button class="btn-char-action btn-edit" title="แก้ไข"       data-id="${char.id}">✏️</button>
+          <button class="btn-char-action btn-del"  title="ลบ"          data-id="${char.id}">🗑️</button>
         </div>
       `;
       card.addEventListener("click", (e) => {
         if (e.target.closest(".char-actions")) return;
         ui.selectCharacter(char.id, characters);
+      });
+      card.querySelector(".btn-quiz").addEventListener("click", (e) => {
+        e.stopPropagation();
+        ui.showQuestionnaireForm(char);
       });
       card.querySelector(".btn-edit").addEventListener("click", (e) => {
         e.stopPropagation();
@@ -168,7 +174,16 @@ const ui = {
 
   showModal(html) {
     document.getElementById("modal-content").innerHTML = html;
-    document.getElementById("modal-overlay").classList.remove("hidden");
+    const overlay = document.getElementById("modal-overlay");
+    overlay.classList.remove("hidden");
+    // Delegate likert button clicks
+    overlay.addEventListener("click", (e) => {
+      const btn = e.target.closest(".q-likert-btn");
+      if (!btn) return;
+      const group = btn.closest(".q-likert");
+      group.querySelectorAll(".q-likert-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+    });
   },
 
   closeModal() {
@@ -256,6 +271,110 @@ const ui = {
       }
     });
     document.getElementById("btn-cancel-del").addEventListener("click", () => ui.closeModal());
+  },
+
+  // ── Questionnaire ────────────────────────────────────────────────────────
+
+  async showQuestionnaireForm(char) {
+    const name = char.nickname || char.name;
+    this.showModal(`
+      <h2 style="color:var(--accent);margin-bottom:8px">📋 ทดสอบบุคลิกของ ${name}</h2>
+      <p class="muted" style="margin-bottom:14px">เลือกระดับความละเอียด:</p>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button id="btn-q-quick" class="btn-primary btn-full">⚡ ด่วน (10 ข้อ)</button>
+        <button id="btn-q-full"  class="btn-sim btn-blue btn-full">📖 ครบ (35 ข้อ)</button>
+      </div>
+      <p class="muted" style="font-size:10px">AI จะวิเคราะห์บุคลิกและสร้าง Persona Profile ให้อัตโนมัติ</p>
+    `);
+    document.getElementById("btn-q-quick").addEventListener("click", () => this._loadQuestionnaire(char, 1));
+    document.getElementById("btn-q-full").addEventListener("click",  () => this._loadQuestionnaire(char, 2));
+  },
+
+  async _loadQuestionnaire(char, level) {
+    const name = char.nickname || char.name;
+    document.getElementById("modal-content").innerHTML = `<p class="muted">กำลังโหลดคำถาม...</p>`;
+    try {
+      const data = await API.getQuestionnaire(char.id, level);
+      const qs = data.questions;
+      const html = qs.map((q, i) => this._renderQuestion(q, i + 1, qs.length)).join("");
+      document.getElementById("modal-content").innerHTML = `
+        <h2 style="color:var(--accent);margin-bottom:4px">📋 ${name}</h2>
+        <p class="muted" style="margin-bottom:12px">${qs.length} คำถาม · ตอบให้ครบแล้วกด วิเคราะห์</p>
+        <form id="form-questionnaire">${html}
+          <button type="submit" class="btn-primary btn-full" style="margin-top:14px">🧠 วิเคราะห์บุคลิก</button>
+        </form>
+      `;
+      document.getElementById("form-questionnaire").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await this._submitQuestionnaire(char, level, qs);
+      });
+    } catch (err) {
+      ui.log(`Error loading questionnaire: ${err.message}`, "error");
+      ui.closeModal();
+    }
+  },
+
+  _renderQuestion(q, idx, total) {
+    const label = `<div class="q-num">${idx}/${total}</div><div class="q-text">${q.thai_text || q.text}</div>`;
+    let input = "";
+    if (q.question_type === "likert") {
+      input = `<div class="q-likert" data-qid="${q.id}">
+        ${[1,2,3,4,5].map(n => `<button type="button" class="q-likert-btn" data-val="${n}">${n}</button>`).join("")}
+        <div class="q-likert-labels"><span>น้อยมาก</span><span>มากมาย</span></div>
+      </div>`;
+    } else if (q.question_type === "forced_choice" || q.question_type === "scenario") {
+      input = `<div class="q-options" data-qid="${q.id}">
+        ${q.options.map((o, i) => `
+          <label class="q-option">
+            <input type="radio" name="q_${q.id}" value="${i}" required />
+            <span>${o}</span>
+          </label>`).join("")}
+      </div>`;
+    } else if (q.question_type === "open_ended") {
+      input = `<textarea class="input-field q-open" data-qid="${q.id}" rows="2" placeholder="พิมพ์คำตอบ..." required></textarea>`;
+    } else if (q.question_type === "multi_select") {
+      input = `<div class="q-options" data-qid="${q.id}">
+        ${q.options.map((o, i) => `
+          <label class="q-option">
+            <input type="checkbox" name="q_${q.id}" value="${i}" />
+            <span>${o}</span>
+          </label>`).join("")}
+      </div>`;
+    }
+    return `<div class="q-block">${label}${input}</div>`;
+  },
+
+  async _submitQuestionnaire(char, level, questions) {
+    const btn = document.querySelector("#form-questionnaire button[type=submit]");
+    btn.disabled = true;
+    btn.textContent = "⏳ AI กำลังวิเคราะห์...";
+
+    const answers = {};
+    for (const q of questions) {
+      if (q.question_type === "likert") {
+        const sel = document.querySelector(`.q-likert[data-qid="${q.id}"] .q-likert-btn.selected`);
+        answers[q.id] = sel ? parseInt(sel.dataset.val) : 3;
+      } else if (q.question_type === "forced_choice" || q.question_type === "scenario") {
+        const sel = document.querySelector(`input[name="q_${q.id}"]:checked`);
+        answers[q.id] = sel ? q.options[parseInt(sel.value)] : q.options[0];
+      } else if (q.question_type === "open_ended") {
+        const el = document.querySelector(`.q-open[data-qid="${q.id}"]`);
+        answers[q.id] = el ? el.value : "";
+      } else if (q.question_type === "multi_select") {
+        const checked = document.querySelectorAll(`input[name="q_${q.id}"]:checked`);
+        answers[q.id] = Array.from(checked).map(c => q.options[parseInt(c.value)]);
+      }
+    }
+
+    try {
+      await API.submitQuestionnaire(char.id, { character_id: char.id, level, answers });
+      ui.closeModal();
+      ui.log(`🧠 สร้าง Persona Profile ให้ ${char.nickname || char.name} สำเร็จ!`, "event");
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "🧠 วิเคราะห์บุคลิก";
+      ui.log(`Error: ${err.message}`, "error");
+    }
   },
 
   showAddCharacterForm() {
