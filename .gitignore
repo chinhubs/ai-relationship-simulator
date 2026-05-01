@@ -46,6 +46,9 @@ desktop.ini
 *.log
 logs/
 
+# Claude Code
+.claude/
+
 # GCP
 service-account*.json
 *-credentials.json
