@@ -47,6 +47,7 @@ class Character(Base):
     avatar_emoji: Mapped[str | None] = mapped_column(String(10))
     gender: Mapped[str] = mapped_column(String(20), default="unspecified")
     relationship_status: Mapped[str] = mapped_column(String(30), default="single")
+    partner_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("characters.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

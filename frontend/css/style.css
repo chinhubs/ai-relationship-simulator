@@ -247,6 +247,7 @@ aside {
 
 /* ── Character card rel status ────────────────────────────────────────────── */
 .char-rel-status { font-size: 10px; color: var(--accent-2); margin-top: 1px; }
+.char-partner-line { font-size: 10px; color: var(--heart); margin-top: 1px; }
 
 /* ── Character card action buttons ───────────────────────────────────────── */
 .char-actions { display: flex; flex-direction: column; gap: 3px; opacity: 0; transition: opacity 0.15s; }

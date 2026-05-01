@@ -55,12 +55,16 @@ const ui = {
       card.className = "char-card";
       card.dataset.id = char.id;
       const statusLabel = RELATIONSHIP_STATUS_LABEL[char.relationship_status] || "โสด 💚";
+      const partner = char.partner_id ? characters.find(c => c.id === char.partner_id) : null;
+      const partnerLine = partner
+        ? `<div class="char-partner-line">❤️ กับ ${partner.nickname || partner.name}</div>`
+        : "";
       card.innerHTML = `
         <span class="char-avatar">${char.avatar_emoji || (char.gender === "female" ? "👩" : char.gender === "male" ? "👨" : "👤")}</span>
         <div class="char-info">
           <div class="char-name">${char.name}${char.nickname ? ` (${char.nickname})` : ""}</div>
           <div class="char-status muted">${char.occupation || ""}</div>
-          <div class="char-rel-status">${statusLabel}</div>
+          <div class="char-rel-status">${statusLabel}${partnerLine}</div>
         </div>
         <div class="char-actions">
           <button class="btn-char-action btn-edit" title="แก้ไข" data-id="${char.id}">✏️</button>
@@ -122,8 +126,13 @@ const ui = {
   renderCharacterStateInfo(state, char) {
     const panel = document.getElementById("selected-char-info");
     const relLabel = char ? (RELATIONSHIP_STATUS_LABEL[char.relationship_status] || "โสด 💚") : "";
+    const partner = char?.partner_id ? (app.characters || []).find(c => c.id === char.partner_id) : null;
+    const partnerRow = partner
+      ? `<div class="state-row"><span class="state-label">❤️ คู่รัก</span><span class="state-val" style="color:var(--heart)">${partner.nickname || partner.name}</span></div>`
+      : "";
     panel.innerHTML = `
       <div class="state-row"><span class="state-label">สถานะความรัก</span><span class="state-val rel-badge">${relLabel}</span></div>
+      ${partnerRow}
       <div class="state-row"><span class="state-label">วันที่ ${state.sim_day}</span><span class="state-val">${state.current_sim_time}</span></div>
       <div class="state-row"><span class="state-label">📍</span><span class="state-val">${state.current_location}</span></div>
       <div class="state-row"><span class="state-label">💼</span><span class="state-val">${state.current_activity}</span></div>
@@ -167,6 +176,10 @@ const ui = {
   },
 
   showEditCharacterForm(char) {
+    const others = (app.characters || []).filter(c => c.id !== char.id);
+    const partnerOptions = `<option value="">— ไม่มี —</option>` +
+      others.map(c => `<option value="${c.id}" ${char.partner_id===c.id?"selected":""}>${c.nickname||c.name}</option>`).join("");
+
     this.showModal(`
       <h2 style="color:var(--accent);margin-bottom:12px">✏️ แก้ไขตัวละคร</h2>
       <form id="form-edit-char">
@@ -187,6 +200,8 @@ const ui = {
           <option value="divorced"    ${char.relationship_status==="divorced"   ?"selected":""}>หย่าแล้ว 💔</option>
           <option value="widowed"     ${char.relationship_status==="widowed"    ?"selected":""}>ม่าย 🖤</option>
         </select>
+        <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px">❤️ คู่รัก / แฟน</label>
+        <select class="input-field" id="e-partner">${partnerOptions}</select>
         <input class="input-field" id="e-emoji" value="${char.avatar_emoji || ""}" placeholder="Avatar emoji เช่น 👩" maxlength="2" />
         <button type="submit" class="btn-primary btn-full" style="margin-top:8px">💾 บันทึก</button>
       </form>
@@ -194,7 +209,8 @@ const ui = {
     document.getElementById("form-edit-char").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
-        await API.updateCharacter(char.id, {
+        const partnerVal = document.getElementById("e-partner").value;
+        const payload = {
           name:                document.getElementById("e-name").value,
           nickname:            document.getElementById("e-nickname").value   || null,
           age:                 parseInt(document.getElementById("e-age").value) || null,
@@ -202,7 +218,13 @@ const ui = {
           gender:              document.getElementById("e-gender").value,
           relationship_status: document.getElementById("e-rel-status").value,
           avatar_emoji:        document.getElementById("e-emoji").value      || null,
-        });
+        };
+        if (partnerVal) {
+          payload.partner_id = parseInt(partnerVal);
+        } else if (char.partner_id) {
+          payload.clear_partner = true;
+        }
+        await API.updateCharacter(char.id, payload);
         ui.closeModal();
         ui.log(`แก้ไขตัวละคร: ${char.name}`, "event");
         await app.loadCharacters();

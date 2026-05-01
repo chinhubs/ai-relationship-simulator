@@ -10,6 +10,7 @@ class CharacterCreate(BaseModel):
     avatar_emoji: str | None = None
     gender: str = "unspecified"
     relationship_status: str = "single"
+    partner_id: int | None = None
 
 
 class CharacterRead(BaseModel):
@@ -21,6 +22,7 @@ class CharacterRead(BaseModel):
     avatar_emoji: str | None
     gender: str
     relationship_status: str
+    partner_id: int | None
     is_active: bool
     created_at: datetime
 
@@ -35,6 +37,8 @@ class CharacterUpdate(BaseModel):
     avatar_emoji: str | None = None
     gender: str | None = None
     relationship_status: str | None = None
+    partner_id: int | None = None
+    clear_partner: bool = False
 
 
 class EmotionState(BaseModel):

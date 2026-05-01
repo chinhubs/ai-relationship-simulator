@@ -53,8 +53,37 @@ async def update_character(character_id: int, data: CharacterUpdate, db: AsyncSe
     char = result.scalar_one_or_none()
     if not char:
         raise HTTPException(status_code=404, detail="Character not found")
-    for field, value in data.model_dump(exclude_none=True).items():
+
+    update_data = data.model_dump(exclude_none=True)
+    clear_partner = update_data.pop("clear_partner", False)
+
+    if clear_partner:
+        # Remove partner link from both sides
+        old_partner_id = char.partner_id
+        char.partner_id = None
+        if old_partner_id:
+            old_partner_res = await db.execute(select(Character).where(Character.id == old_partner_id))
+            old_partner = old_partner_res.scalar_one_or_none()
+            if old_partner and old_partner.partner_id == character_id:
+                old_partner.partner_id = None
+    elif "partner_id" in update_data:
+        new_partner_id = update_data["partner_id"]
+        # Clear old partner's back-link if changed
+        if char.partner_id and char.partner_id != new_partner_id:
+            old_p_res = await db.execute(select(Character).where(Character.id == char.partner_id))
+            old_p = old_p_res.scalar_one_or_none()
+            if old_p and old_p.partner_id == character_id:
+                old_p.partner_id = None
+        # Set new partner bidirectionally
+        new_p_res = await db.execute(select(Character).where(Character.id == new_partner_id))
+        new_p = new_p_res.scalar_one_or_none()
+        if not new_p:
+            raise HTTPException(status_code=404, detail="Partner character not found")
+        new_p.partner_id = character_id
+
+    for field, value in update_data.items():
         setattr(char, field, value)
+
     await db.commit()
     await db.refresh(char)
     return char
