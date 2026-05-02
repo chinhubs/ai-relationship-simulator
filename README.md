@@ -1,10 +1,23 @@
 # AI Relationship Simulator
 
-> **v2.0.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
+> **v3.0.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
 
 A web-based simulation platform where you create psychologically-accurate AI personas, run them through a daily life simulation, and observe how they feel, decide, and form relationships over time — all inside a living, animated pixel art world.
 
 ---
+
+## What's New in v3.0.0
+
+- **Complete Brain & Memory System** — every tick is now guaranteed to produce at least one memory record (gap-fill routine capture). Four memory layers: short-term (rolling 20-entry buffer), episodic (promoted from short-term when emotion impact ≥ 10), semantic (permanent character-growth/learning), emotional (significant emotional memories, never pruned). Memory access bumps `access_count` and reinforces `importance_score` every 5 recalls.
+- **Daily Summary Compaction** — at midnight the engine automatically compacts the day's short-term memories into a single episodic diary summary, then prunes memory banks to capacity limits (80 episodic, 40 semantic) — no unbounded DB growth.
+- **Thai Calendar Dates** — the simulation clock now shows real Thai Buddhist Era (BE) calendar dates everywhere: timeline headers (`วันอาทิตย์ที่ 5 ม.ค. 2568`), log timestamps (`🌅 อา. 5 ม.ค. 08:00`), and status panels. Sim Day 1 = Sunday 5 January 2025 (2568 BE).
+- **Clock & Weekend Fixes** — fixed midnight overflow bug (days no longer stuck at midnight when animation ticks past 1440 minutes); fixed `is_weekend()` formula that incorrectly treated Friday as a weekend and Sunday as a weekday.
+- **Pet Multi-Color Fur** — up to 3 coat colors can be selected for pets; a base color plus up to 2 spot/patch colors are visually rendered on the pet sprite (patches on body and head) for all 5 species.
+- **Clickable Indoor Characters** — sprites and name labels inside the indoor building scene are now interactive; clicking any character opens their status panel directly.
+- **AI Cost Optimizations (≈50% fewer API calls)**
+  - Persona prompt TTL cache (5 min) — system prompt built once per character, reused across ticks
+  - Routine tick skipping — on boring ticks (no events, emotions all within 15–85 range), every other tick uses a no-op fallback instead of calling the API
+  - Token usage tracking — `prompt_tokens`, `completion_tokens`, `cached_tokens` now logged per tick in `SimulationTick.token_usage`
 
 ## What's New in v2.0.0
 
@@ -59,7 +72,7 @@ A web-based simulation platform where you create psychologically-accurate AI per
 - **Persona Questionnaire** — 3-level intake questionnaire (10–35 questions) that builds an attachment-theory-based psychological profile for each character
 - **Emotion Engine** — 9-dimensional emotional state (happiness, stress, anxiety, loneliness, trust, love, resentment, security, energy) with natural decay and activity-based modifiers
 - **AI Brain (Decision Engine)** — each tick, the character thinks, decides, and acts using an LLM with their full persona as the cached system prompt
-- **Memory System** — 4-layer memory (short-term, episodic, semantic, emotional) that persists across ticks
+- **Memory System** — 4-layer memory (short-term cap 20, episodic cap 80, semantic cap 40, emotional permanent) with access reinforcement, daily summary compaction at midnight, and automatic pruning
 - **Relationship Manager** — tracks closeness, trust, conflict score, attraction, communication quality, and interaction history between any pair of characters
 - **Dialogue Engine** — generates authentic messages/texts the character would actually send, including tone and subtext
 - **Daily Routine** — 24-hour schedule with location-aware activity slots (weekday vs weekend patterns)
@@ -202,6 +215,14 @@ ai-relationship-simulator/
 ---
 
 ## Changelog
+
+### v3.0.0 — Complete Brain System + Thai Calendar + AI Cost Optimization
+- **4-Layer Memory System complete** — short-term (cap 20), episodic (cap 80), semantic (cap 40), emotional (permanent); gap-fill ensures no tick is lost; daily midnight compaction collapses short-term → one episodic summary; `prune_old_memories()` enforces caps; access reinforcement bumps importance every 5 recalls
+- **Thai Buddhist Era calendar** — `simDayToDate()` converts sim day counter to real Thai BE dates; Day 1 = วันอาทิตย์ 5 ม.ค. 2568; displayed in timeline, log, clock, and status panel
+- **Clock & weekend bug fixes** — midnight overflow no longer stalls the clock; `is_weekend()` formula corrected (`%7 in {0,1}` = Sat/Sun)
+- **Pet multi-color fur** — up to 3 swatch selections (`body_colors[]`) rendered as patches on all 5 species sprites; backward compatible with single `body_color`
+- **Clickable indoor characters** — sprites and name labels in `IndoorScene` dispatch `pointerup` → opens status panel
+- **AI cost optimizations** — persona TTL cache (5 min), routine tick skip every other boring tick, token usage tracked and stored per tick in `SimulationTick.token_usage`
 
 ### v2.0.0 — Character Appearance Customization + Mobile Pinch-to-Zoom
 - **Character Appearance Customization** — create/edit form now includes a visual swatch picker: shirt color (12 options), pants color (8 options), hair color (10 options), hair style (สั้น/ยาว/มวยผม) for human characters; coat color (8 options) and eye color (6 options) for pets; saved in `profile_extra.appearance`
