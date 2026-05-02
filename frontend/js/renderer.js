@@ -374,13 +374,16 @@ class IsoScene extends Phaser.Scene {
       const app = ch.profile_extra?.appearance || {};
       const isPet = ch.character_type === 'pet';
       if (isPet) {
-        const pal     = PET_PALETTE[ci % PET_PALETTE.length];
-        const body    = _parseColor(app.body_color) ?? pal.body;
-        const dark    = _parseColor(app.dark_color)  ?? darken(body, 40);
-        const eye     = _parseColor(app.eye_color)   ?? pal.eye;
+        const pal   = PET_PALETTE[ci % PET_PALETTE.length];
+        const bcs   = app.body_colors?.length > 0 ? app.body_colors : (app.body_color ? [app.body_color] : null);
+        const body  = _parseColor(bcs?.[0]) ?? pal.body;
+        const dark  = bcs?.[0] ? darken(body, 40) : pal.dark;
+        const spot  = bcs?.[1] ? _parseColor(bcs[1]) : null;
+        const spot2 = bcs?.[2] ? _parseColor(bcs[2]) : null;
+        const eye   = _parseColor(app.eye_color) ?? pal.eye;
         const species = (ch.profile_extra?.species || '');
-        this._genPetSprite(`pet_${ch.id}_r`, body, dark, eye, true,  species);
-        this._genPetSprite(`pet_${ch.id}_l`, body, dark, eye, false, species);
+        this._genPetSprite(`pet_${ch.id}_r`, body, dark, eye, true,  species, spot, spot2);
+        this._genPetSprite(`pet_${ch.id}_l`, body, dark, eye, false, species, spot, spot2);
       } else {
         const pal      = CHAR_PALETTE[ci % 6];
         const shirt    = _parseColor(app.shirt)      ?? pal.shirt;
@@ -442,21 +445,21 @@ class IsoScene extends Phaser.Scene {
     g.destroy();
   }
 
-  _genPetSprite(key, body, dark, eyeColor, isRight, species = '', spot = null) {
+  _genPetSprite(key, body, dark, eyeColor, isRight, species = '', spot = null, spot2 = null) {
     const s = (species || '').toLowerCase();
     if (s.includes('dog') || s.includes('หมา') || s.includes('สุนัข'))
-      return this._genDogSprite(key, body, dark, eyeColor, isRight);
+      return this._genDogSprite(key, body, dark, eyeColor, isRight, spot, spot2);
     if (s.includes('rabbit') || s.includes('กระต่าย'))
-      return this._genRabbitSprite(key, body, dark, eyeColor, isRight);
+      return this._genRabbitSprite(key, body, dark, eyeColor, isRight, spot, spot2);
     if (s.includes('hamster') || s.includes('แฮมสเตอร์'))
-      return this._genHamsterSprite(key, body, dark, eyeColor, isRight);
+      return this._genHamsterSprite(key, body, dark, eyeColor, isRight, spot, spot2);
     if (s.includes('bird') || s.includes('นก') || s.includes('parakeet') || s.includes('parrot'))
-      return this._genBirdSprite(key, body, dark, eyeColor, isRight);
+      return this._genBirdSprite(key, body, dark, eyeColor, isRight, spot, spot2);
     // default: cat
-    this._genCatSprite(key, body, dark, eyeColor, isRight);
+    this._genCatSprite(key, body, dark, eyeColor, isRight, spot, spot2);
   }
 
-  _genCatSprite(key, body, dark, eyeColor, isRight) {
+  _genCatSprite(key, body, dark, eyeColor, isRight, spot = null, spot2 = null) {
     const W = 16, H = 24;
     const g = this.make.graphics({ x:0, y:0, add:false });
     const light = lighten(body, 40);
@@ -467,10 +470,14 @@ class IsoScene extends Phaser.Scene {
     else         { g.fillRect(13,10,3,2); g.fillRect(14,8,2,3); g.fillRect(13,7,2,2); }
     // Body
     g.fillStyle(body);  g.fillRect(3,11,10,7);
-    g.fillStyle(light); g.fillRect(5,12,6,5);
+    // Multi-color patches on back half of body
+    if (spot  !== null) { g.fillStyle(spot);  isRight ? g.fillRect(3,11,5,7) : g.fillRect(8,11,5,7); }
+    if (spot2 !== null) { g.fillStyle(spot2); isRight ? g.fillRect(8,13,4,5) : g.fillRect(4,13,4,5); }
+    g.fillStyle(light); g.fillRect(5,12,6,5); // belly highlight always on top
     // Head
     const hx = isRight ? 7 : 1;
     g.fillStyle(body); g.fillRect(hx,3,8,8);
+    if (spot !== null) { g.fillStyle(spot); isRight ? g.fillRect(hx,3,4,8) : g.fillRect(hx+4,3,4,8); }
     // Pointy ears
     g.fillStyle(dark);
     g.fillTriangle(hx,3,hx+2,3,hx+1,0); g.fillTriangle(hx+5,3,hx+7,3,hx+6,0);
@@ -497,7 +504,7 @@ class IsoScene extends Phaser.Scene {
     g.generateTexture(key, W, H); g.destroy();
   }
 
-  _genDogSprite(key, body, dark, eyeColor, isRight) {
+  _genDogSprite(key, body, dark, eyeColor, isRight, spot = null, spot2 = null) {
     const W = 16, H = 24;
     const g = this.make.graphics({ x:0, y:0, add:false });
     const light = lighten(body, 40);
@@ -508,10 +515,14 @@ class IsoScene extends Phaser.Scene {
     else         { g.fillRect(14,9,2,7); g.fillRect(13,7,3,3); }
     // Body (stockier than cat)
     g.fillStyle(body);  g.fillRect(2,12,12,8);
+    // Multi-color saddle patches on body
+    if (spot  !== null) { g.fillStyle(spot);  isRight ? g.fillRect(2,12,6,8) : g.fillRect(8,12,6,8); }
+    if (spot2 !== null) { g.fillStyle(spot2); isRight ? g.fillRect(9,14,5,6) : g.fillRect(2,14,5,6); }
     g.fillStyle(light); g.fillRect(4,13,8,6);
     // Head (wider)
     const hx = isRight ? 7 : 1;
     g.fillStyle(body); g.fillRect(hx,3,8,9);
+    if (spot !== null) { g.fillStyle(spot); isRight ? g.fillRect(hx,3,4,9) : g.fillRect(hx+4,3,4,9); }
     // Floppy ears (dark rectangles hanging beside head)
     g.fillStyle(dark);
     g.fillRect(hx-2,3,3,8);   // far ear
@@ -535,7 +546,7 @@ class IsoScene extends Phaser.Scene {
     g.generateTexture(key, W, H); g.destroy();
   }
 
-  _genRabbitSprite(key, body, dark, eyeColor, isRight) {
+  _genRabbitSprite(key, body, dark, eyeColor, isRight, spot = null, spot2 = null) {
     const W = 16, H = 24;
     const g = this.make.graphics({ x:0, y:0, add:false });
     const light = lighten(body, 40);
@@ -546,10 +557,14 @@ class IsoScene extends Phaser.Scene {
     else         { g.fillRect(12,16,3,3); }
     // Body (round, compact)
     g.fillStyle(body);  g.fillRect(3,15,10,7);
+    // Multi-color patches on body
+    if (spot  !== null) { g.fillStyle(spot);  isRight ? g.fillRect(3,15,5,7) : g.fillRect(8,15,5,7); }
+    if (spot2 !== null) { g.fillStyle(spot2); isRight ? g.fillRect(8,17,4,5) : g.fillRect(4,17,4,5); }
     g.fillStyle(light); g.fillRect(5,16,6,5);
     // Head
     const hx = isRight ? 7 : 1;
     g.fillStyle(body); g.fillRect(hx,8,8,9);
+    if (spot !== null) { g.fillStyle(spot); isRight ? g.fillRect(hx,8,4,9) : g.fillRect(hx+4,8,4,9); }
     // Very tall upright ears (most distinctive)
     g.fillStyle(body);
     g.fillRect(hx+1,0,3,12); g.fillRect(hx+5,0,3,12);
@@ -568,7 +583,7 @@ class IsoScene extends Phaser.Scene {
     g.generateTexture(key, W, H); g.destroy();
   }
 
-  _genHamsterSprite(key, body, dark, eyeColor, isRight) {
+  _genHamsterSprite(key, body, dark, eyeColor, isRight, spot = null, spot2 = null) {
     const W = 16, H = 24;
     const g = this.make.graphics({ x:0, y:0, add:false });
     const light = lighten(body, 40);
@@ -579,10 +594,14 @@ class IsoScene extends Phaser.Scene {
     else         { g.fillRect(14,14,2,2); }
     // Chubby round body (wider)
     g.fillStyle(body);  g.fillRect(1,13,14,8);
+    // Multi-color patches (back half + optional dorsal stripe)
+    if (spot  !== null) { g.fillStyle(spot);  isRight ? g.fillRect(1,13,7,8) : g.fillRect(8,13,7,8); }
+    if (spot2 !== null) { g.fillStyle(spot2); g.fillRect(6,13,4,8); } // dorsal stripe
     g.fillStyle(light); g.fillRect(3,14,10,6);
     // Head (blends with body, chubby cheeks)
     const hx = isRight ? 6 : 2;
     g.fillStyle(body); g.fillRect(hx,4,9,10);
+    if (spot !== null) { g.fillStyle(spot); isRight ? g.fillRect(hx,4,4,10) : g.fillRect(hx+5,4,4,10); }
     // Chubby cheeks (lighter, wider than head)
     g.fillStyle(lighten(body,20));
     if (isRight) { g.fillRect(hx+7,7,3,5); }
@@ -603,13 +622,13 @@ class IsoScene extends Phaser.Scene {
     g.generateTexture(key, W, H); g.destroy();
   }
 
-  _genBirdSprite(key, body, dark, eyeColor, isRight) {
+  _genBirdSprite(key, body, dark, eyeColor, isRight, spot = null, spot2 = null) {
     const W = 16, H = 24;
     const g = this.make.graphics({ x:0, y:0, add:false });
     const light = lighten(body, 50);
     g.fillStyle(0x000000, 0.10); g.fillEllipse(8, 23, 8, 3);
-    // Tail feathers
-    g.fillStyle(dark);
+    // Tail feathers (spot2 = tail color if provided)
+    g.fillStyle(spot2 !== null ? spot2 : dark);
     if (isRight) { g.fillRect(0,13,4,8); g.fillRect(1,11,3,4); }
     else         { g.fillRect(12,13,4,8); g.fillRect(12,11,3,4); }
     g.fillStyle(body);
@@ -617,12 +636,15 @@ class IsoScene extends Phaser.Scene {
     else         { g.fillRect(12,14,3,6); }
     // Body (compact, oval)
     g.fillStyle(body);  g.fillRect(4,10,8,10);
+    // Wing band in spot color if provided
+    if (spot !== null) { g.fillStyle(spot); g.fillRect(4,10,8,4); }
     g.fillStyle(light); g.fillRect(5,12,6,7);
     // Wing fold detail
     g.fillStyle(dark); g.fillRect(4,11,7,2);
-    // Head (round)
+    // Head (spot color gives parrot-style two-tone look)
     const hx = isRight ? 8 : 4;
-    g.fillStyle(body); g.fillRect(hx,2,7,8);
+    g.fillStyle(spot !== null ? spot : body); g.fillRect(hx,2,7,8);
+    if (spot2 !== null) { g.fillStyle(spot2); isRight ? g.fillRect(hx,2,4,8) : g.fillRect(hx+3,2,4,8); }
     // Beak (pointed)
     g.fillStyle(0xf0c020);
     if (isRight) { g.fillTriangle(hx+6,3,hx+10,5,hx+6,7); }

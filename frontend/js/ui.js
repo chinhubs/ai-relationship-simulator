@@ -1019,9 +1019,9 @@ const ui = {
       return `<div class="appearance-picker" id="${prefix}-appearance">
         <div class="ap-section-label">🎨 ลักษณะภายนอก</div>
         <div style="font-size:9px;color:var(--text-muted);margin-bottom:6px">รูปร่างตัวละครจะเปลี่ยนตามประเภทสัตว์ที่กรอกในช่อง "สายพันธุ์/ประเภท" (แมว/สุนัข/กระต่าย/แฮมสเตอร์/นก)</div>
-        <div class="ap-row"><span class="ap-label">สีขน</span>
+        <div class="ap-row"><span class="ap-label">สีขน <span style="font-size:9px;color:var(--text-muted)">(เลือก 1–3 สี)</span></span>
           <div class="ap-swatches">${PET_BODY_COLORS.map(c =>
-            `<span class="color-swatch${appearance.body_color===c.hex?' swatch-sel':''}" data-field="body_color" data-color="${c.hex}" style="background:${c.hex}" title="${c.label}"></span>`
+            `<span class="color-swatch${(appearance.body_colors||[]).includes(c.hex)?' swatch-sel':''}" data-field="body_colors" data-multi="3" data-color="${c.hex}" style="background:${c.hex}" title="${c.label}"></span>`
           ).join('')}</div></div>
         <div class="ap-row"><span class="ap-label">สีตา</span>
           <div class="ap-swatches">${PET_EYE_COLORS.map(c =>
@@ -1057,9 +1057,19 @@ const ui = {
     container.addEventListener('click', (e) => {
       const sw = e.target.closest('.color-swatch');
       if (sw) {
-        const field = sw.dataset.field;
-        container.querySelectorAll(`.color-swatch[data-field="${field}"]`).forEach(s => s.classList.remove('swatch-sel'));
-        sw.classList.add('swatch-sel');
+        const field  = sw.dataset.field;
+        const maxSel = parseInt(sw.dataset.multi || '1');
+        if (maxSel > 1) {
+          if (sw.classList.contains('swatch-sel')) {
+            sw.classList.remove('swatch-sel');
+          } else {
+            const already = container.querySelectorAll(`.color-swatch[data-field="${field}"].swatch-sel`).length;
+            if (already < maxSel) sw.classList.add('swatch-sel');
+          }
+        } else {
+          container.querySelectorAll(`.color-swatch[data-field="${field}"]`).forEach(s => s.classList.remove('swatch-sel'));
+          sw.classList.add('swatch-sel');
+        }
         return;
       }
       const hs = e.target.closest('.hair-style-btn');
@@ -1075,7 +1085,13 @@ const ui = {
     if (!container) return undefined;
     const result = {};
     container.querySelectorAll('.color-swatch.swatch-sel').forEach(sw => {
-      result[sw.dataset.field] = sw.dataset.color;
+      const field = sw.dataset.field;
+      if (sw.dataset.multi) {
+        if (!result[field]) result[field] = [];
+        result[field].push(sw.dataset.color);
+      } else {
+        result[field] = sw.dataset.color;
+      }
     });
     const hsBtn = container.querySelector('.hair-style-btn.hs-sel');
     if (hsBtn) result.hair_style = hsBtn.dataset.style;
