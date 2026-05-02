@@ -1458,18 +1458,16 @@ class IndoorScene extends Phaser.Scene {
         stroke:'#1a0a04', strokeThickness:2, resolution:2,
       }).setOrigin(0.5, 1).setDepth(102 + py) : null;
 
-      const walker = { spr, nlbl, albl, px, py, tx:px, ty:py, room, ci, gd, isPet, facingRight:true, waitTimer:Math.random()*80 };
+      const walker = { spr, nlbl, albl, px, py, tx:px, ty:py, room, ci, gd, isPet, facingRight:true, waitTimer: Math.random() * 20 };
       this._walkers.push(walker);
-      this._pickTarget(walker);
+      this._pickTarget(walker);  // sets initial tx/ty only
     }
   }
 
   _pickTarget(w) {
-    const m = 30;
-    const r = w.room;
+    const m = 30, r = w.room;
     w.tx = r.x + m + Math.random() * (r.w - m * 2);
     w.ty = r.y + m + Math.random() * (r.h - m * 2 - 10);
-    w.waitTimer = 80 + Math.random() * 220;
   }
 
   _drawHeader(title) {
@@ -1498,15 +1496,22 @@ class IndoorScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    const LERP = 0.036;
+    const LERP = 0.055;
+    const dt   = delta / 16;
     for (const w of this._walkers) {
-      if (w.waitTimer > 0) {
-        w.waitTimer -= delta / 16;
-        if (w.waitTimer <= 0) this._pickTarget(w);
+      // Waiting between moves — just count down
+      if (w.waitTimer > 0) { w.waitTimer -= dt; continue; }
+
+      const dx = w.tx - w.px, dy = w.ty - w.py;
+
+      // Arrived at target — pick new spot and pause briefly
+      if (Math.hypot(dx, dy) < 5) {
+        this._pickTarget(w);
+        w.waitTimer = 18 + Math.random() * 55;  // ~0.3–1.2 s pause
         continue;
       }
-      const dx = w.tx - w.px, dy = w.ty - w.py;
-      if (Math.hypot(dx, dy) < 5) { w.waitTimer = 80 + Math.random() * 220; continue; }
+
+      // Move toward target
       if (Math.abs(dx) > 1) w.facingRight = dx > 0;
       w.px += dx * LERP; w.py += dy * LERP;
       if (w.isPet) {
