@@ -94,14 +94,16 @@ async def generate_message(
         relationship_context=relationship_context,
     )
 
-    raw_response = await call_brain(
+    raw_response, tok_usage = await call_brain(
         system_prompt=persona_prompt,
         user_message=dialogue_prompt,
         cache_persona=True,
         max_tokens=800,
     )
 
-    return _parse_dialogue_response(raw_response)
+    result = _parse_dialogue_response(raw_response)
+    result["_token_usage"] = tok_usage
+    return result
 
 
 async def generate_diary_entry(
@@ -136,9 +138,10 @@ Write a diary/journal entry as {character_name} reflecting on their day.
 Return only the diary text, no JSON.
 """
 
-    return await call_brain(
+    text, _ = await call_brain(
         system_prompt=persona_prompt,
         user_message=diary_prompt,
         cache_persona=True,
         max_tokens=600,
     )
+    return text

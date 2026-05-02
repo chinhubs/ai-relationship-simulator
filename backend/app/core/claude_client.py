@@ -30,16 +30,18 @@ def _is_model_access_error(exc: Exception) -> bool:
     return "model_not_found" in msg or "does not have access to model" in msg
 
 
-async def _call_with_fallback(messages: list[dict], max_tokens: int) -> str:
-    """Try configured model first, then fall back through the list."""
+async def _call_with_fallback(messages: list[dict], max_tokens: int) -> tuple[str, dict]:
+    """
+    Try configured model first, then fall back through the list.
+    Returns (content, usage_dict) where usage_dict has:
+      prompt_tokens, completion_tokens, total_tokens, cached_tokens
+    """
     global _resolved_model
     client = get_claude_client()
 
-    # Build candidate list: configured model first, then fallbacks (dedup)
     preferred = settings.openai_model
     candidates = [preferred] + [m for m in _MODEL_FALLBACK if m != preferred]
 
-    # If we already found a working model this session, skip to it
     if _resolved_model and _resolved_model in candidates:
         candidates = [_resolved_model] + [m for m in candidates if m != _resolved_model]
 
@@ -54,13 +56,32 @@ async def _call_with_fallback(messages: list[dict], max_tokens: int) -> str:
             if _resolved_model != model:
                 _resolved_model = model
                 logger.info("Using OpenAI model: %s", model)
-            return response.choices[0].message.content or ""
+
+            usage: dict = {}
+            if response.usage:
+                cached = 0
+                details = getattr(response.usage, "prompt_tokens_details", None)
+                if details:
+                    cached = getattr(details, "cached_tokens", 0) or 0
+                usage = {
+                    "prompt_tokens":     response.usage.prompt_tokens,
+                    "completion_tokens": response.usage.completion_tokens,
+                    "total_tokens":      response.usage.total_tokens,
+                    "cached_tokens":     cached,
+                }
+                logger.debug(
+                    "Token usage — prompt:%d completion:%d cached:%d model:%s",
+                    usage["prompt_tokens"], usage["completion_tokens"], cached, model,
+                )
+
+            return response.choices[0].message.content or "", usage
+
         except Exception as exc:
             if _is_model_access_error(exc):
                 logger.warning("Model %s not accessible, trying next...", model)
                 last_exc = exc
                 continue
-            raise  # non-access errors bubble up immediately
+            raise
 
     raise RuntimeError(f"No accessible OpenAI model found. Last error: {last_exc}")
 
@@ -71,7 +92,11 @@ async def call_brain(
     *,
     cache_persona: bool = True,
     max_tokens: int = 2048,
-) -> str:
+) -> tuple[str, dict]:
+    """
+    Call the AI brain. Returns (response_text, usage_dict).
+    usage_dict keys: prompt_tokens, completion_tokens, total_tokens, cached_tokens
+    """
     return await _call_with_fallback(
         messages=[
             {"role": "system", "content": system_prompt},
@@ -116,7 +141,7 @@ async def analyze_persona_answers(answers_json: str) -> dict:
         "Also include 'attachment_scores': {secure, anxious, avoidant, fearful_avoidant} "
         "as 0-100 values summing to 100."
     )
-    text = await _call_with_fallback(
+    text, _ = await _call_with_fallback(
         messages=[
             {"role": "system", "content": system},
             {

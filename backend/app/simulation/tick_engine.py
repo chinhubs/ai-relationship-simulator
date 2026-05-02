@@ -33,6 +33,29 @@ _NOTABLE_ACTION_TYPES = {
     "seek_comfort", "vent", "withdraw",
 }
 
+_AI_SKIP_INTERVAL = 2  # call AI every Nth routine tick to reduce costs
+
+
+def _should_skip_ai(event_descriptions: list, state: CharacterState, tick_number: int) -> bool:
+    if event_descriptions:
+        return False
+    if tick_number % _AI_SKIP_INTERVAL == 0:
+        return False
+    return all(15 <= getattr(state, k, 50) <= 85 for k in ("happiness", "stress", "anxiety", "loneliness"))
+
+
+def _routine_decision() -> dict:
+    return {
+        "decision": "ทำกิจกรรมตามปกติ",
+        "internal_monologue": None,
+        "action_type": "ignore",
+        "message_to_send": None,
+        "emotion_delta": {k: 0.0 for k in EMOTION_KEYS},
+        "memory_to_store": None,
+        "growth_reflection": None,
+        "_token_usage": {},
+    }
+
 
 def _determine_notable(
     decision_result: dict,
@@ -131,16 +154,22 @@ async def run_tick(
     else:
         situation = f"เวลา {sim_time} คุณกำลัง{state.current_activity} ที่ {state.current_location} ไม่มีเหตุการณ์พิเศษ"
 
-    # 5. AI Decision Engine
-    decision_result = await run_decision(
-        db=db,
-        character_id=character_id,
-        state=state,
-        event_description=situation,
-        sim_day=sim_day,
-        sim_time=sim_time,
-        related_character_id=related_character_id,
-    )
+    # 5. AI Decision Engine (skip on routine ticks to reduce API cost)
+    _tick_usage: dict = {}
+    if _should_skip_ai(event_descriptions, state, tick_number):
+        decision_result = _routine_decision()
+    else:
+        decision_result = await run_decision(
+            db=db,
+            character_id=character_id,
+            state=state,
+            event_description=situation,
+            sim_day=sim_day,
+            sim_time=sim_time,
+            related_character_id=related_character_id,
+        )
+    for k, v in (decision_result.get("_token_usage") or {}).items():
+        _tick_usage[k] = _tick_usage.get(k, 0) + (v or 0)
 
     # 6. Apply AI emotion delta
     ai_delta_raw = decision_result.get("emotion_delta", {})
@@ -241,6 +270,8 @@ async def run_tick(
         decision_result["generated_message"] = dialogue.get("message", "")
         decision_result["message_tone"] = tone
         decision_result["message_subtext"] = dialogue.get("subtext", "")
+        for k, v in (dialogue.get("_token_usage") or {}).items():
+            _tick_usage[k] = _tick_usage.get(k, 0) + (v or 0)
 
         rel_deltas = derive_relationship_deltas_from_action(action_type, tone)
         await update_relationship(
@@ -288,6 +319,7 @@ async def run_tick(
         action_type=action_type,
         is_notable=is_notable,
         notable_reason=notable_reason,
+        token_usage=_tick_usage,
     )
     db.add(tick_log)
 

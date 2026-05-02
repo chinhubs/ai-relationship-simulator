@@ -1,10 +1,19 @@
 """Builds and caches the stable system-prompt portion of a character's persona."""
 
-import json
+import time
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from ..models.db_models import Character, PersonaProfile
+
+# In-memory TTL cache: {character_id: (prompt_str, timestamp)}
+_persona_cache: dict[int, tuple[str, float]] = {}
+_CACHE_TTL = 300.0  # 5 minutes — re-fetch from DB if profile was updated
+
+
+def invalidate_persona_cache(character_id: int) -> None:
+    """Call this after updating a character's profile so the next tick rebuilds."""
+    _persona_cache.pop(character_id, None)
 
 
 _CHAR_TYPE_CONTEXT = {
@@ -200,6 +209,11 @@ Below you will receive your current emotional state and a situation to process.
 
 
 async def get_persona_prompt(character_id: int, db: AsyncSession) -> str:
+    # Serve from in-memory cache if still fresh (avoids DB round-trip every tick)
+    cached = _persona_cache.get(character_id)
+    if cached and (time.time() - cached[1]) < _CACHE_TTL:
+        return cached[0]
+
     result = await db.execute(
         select(Character).where(Character.id == character_id)
     )
@@ -211,7 +225,10 @@ async def get_persona_prompt(character_id: int, db: AsyncSession) -> str:
         select(PersonaProfile).where(PersonaProfile.character_id == character_id)
     )
     profile = profile_result.scalar_one_or_none()
-    if not profile:
-        return _build_default_prompt(character)
-
-    return build_persona_system_prompt(character, profile)
+    prompt = (
+        build_persona_system_prompt(character, profile)
+        if profile else
+        _build_default_prompt(character)
+    )
+    _persona_cache[character_id] = (prompt, time.time())
+    return prompt

@@ -127,8 +127,9 @@ async def run_decision(
         character_name=character_name,
     )
 
+    tok_usage: dict = {}
     try:
-        raw_response = await call_brain(
+        raw_response, tok_usage = await call_brain(
             system_prompt=persona_prompt,
             user_message=volatile_prompt,
             cache_persona=True,
@@ -137,4 +138,6 @@ async def run_decision(
     except Exception:
         raw_response = ""  # AI unavailable → fall back to "does nothing"
 
-    return _parse_decision_response(raw_response)
+    result = _parse_decision_response(raw_response)
+    result["_token_usage"] = tok_usage
+    return result
