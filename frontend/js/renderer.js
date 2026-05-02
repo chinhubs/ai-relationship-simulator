@@ -1221,9 +1221,7 @@ const INDOOR_LAYOUTS = {
 // ni = npc texture index (0-5), roomId = room.id to place them in
 // color = role label colour (staff blue / manager gold / visitor gray)
 const INDOOR_NPCS = {
-  house: [
-    { role:'👥 ผู้อยู่อาศัย', roomId:'dflt', ni:3, color:'#d8d8c8' },
-  ],
+  // house: no ambient NPCs — private space, only user-created characters appear
   office: [
     { role:'💼 พนักงาน',   roomId:'work', ni:1, color:'#a8d8f8' },
     { role:'💼 พนักงาน',   roomId:'work', ni:3, color:'#a8d8f8' },
