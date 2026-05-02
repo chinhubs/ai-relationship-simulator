@@ -1295,89 +1295,107 @@ const INDOOR_LAYOUTS = {
 };
 
 // ─── Ambient NPC definitions per building type ────────────────────────────────
-// ni = npc texture index (0-5), roomId = room.id to place them in
-// color = role label colour (staff blue / manager gold / visitor gray)
+// anchorKey = furniture slot to stand/sit at (null = wander freely)
 const INDOOR_NPCS = {
-  // house: no ambient NPCs — private space, only user-created characters appear
   office: [
-    { role:'💼 พนักงาน',   roomId:'work', ni:1, color:'#a8d8f8' },
-    { role:'💼 พนักงาน',   roomId:'work', ni:3, color:'#a8d8f8' },
-    { role:'💼 พนักงาน',   roomId:'work', ni:5, color:'#a8d8f8' },
-    { role:'📋 หัวหน้า',   roomId:'conf', ni:0, color:'#f8e090' },
-    { role:'📋 ผู้จัดการ',  roomId:'conf', ni:4, color:'#f8e090' },
-    { role:'🗂 เลขา',     roomId:'lobb', ni:2, color:'#a8d8f8' },
+    { role:'💼 พนักงาน',   roomId:'work', ni:1, color:'#a8d8f8', anchorKey:'desk',    icon:'💻' },
+    { role:'💼 พนักงาน',   roomId:'work', ni:3, color:'#a8d8f8', anchorKey:'desk',    icon:'💻' },
+    { role:'💼 พนักงาน',   roomId:'work', ni:5, color:'#a8d8f8', anchorKey:'desk',    icon:'💻' },
+    { role:'📋 หัวหน้า',   roomId:'conf', ni:0, color:'#f8e090', anchorKey:'conf',    icon:'📋' },
+    { role:'📋 ผู้จัดการ',  roomId:'conf', ni:4, color:'#f8e090', anchorKey:'conf',    icon:'📋' },
+    { role:'🗂 เลขา',     roomId:'lobb', ni:2, color:'#a8d8f8', anchorKey:'desk',    icon:'📑' },
   ],
   cafe: [
-    { role:'☕ บาริสต้า',  roomId:'cbar', ni:0, color:'#f8e090' },
-    { role:'☕ บาริสต้า',  roomId:'cbar', ni:4, color:'#f8e090' },
-    { role:'🍽 เสิร์ฟ',   roomId:'seat', ni:2, color:'#a8d8f8' },
-    { role:'🪑 ลูกค้า',   roomId:'seat', ni:3, color:'#d8d8c8' },
-    { role:'🪑 ลูกค้า',   roomId:'seat', ni:5, color:'#d8d8c8' },
+    { role:'☕ บาริสต้า',  roomId:'cbar', ni:0, color:'#f8e090', anchorKey:'counter', icon:'☕' },
+    { role:'☕ บาริสต้า',  roomId:'cbar', ni:4, color:'#f8e090', anchorKey:'counter', icon:'☕' },
+    { role:'🍽 เสิร์ฟ',   roomId:'seat', ni:2, color:'#a8d8f8', anchorKey:null,      icon:'🍽' },
+    { role:'🪑 ลูกค้า',   roomId:'seat', ni:3, color:'#d8d8c8', anchorKey:'cafe_seat',icon:'☕' },
+    { role:'🪑 ลูกค้า',   roomId:'seat', ni:5, color:'#d8d8c8', anchorKey:'cafe_seat',icon:'☕' },
   ],
   restaurant: [
-    { role:'👨‍🍳 พ่อครัว',  roomId:'kchi', ni:0, color:'#f0f0a0' },
-    { role:'👨‍🍳 เชฟ',     roomId:'kchi', ni:2, color:'#f0f0a0' },
-    { role:'🍜 เสิร์ฟ',   roomId:'dine', ni:1, color:'#a8d8f8' },
-    { role:'🍜 เสิร์ฟ',   roomId:'dine', ni:4, color:'#a8d8f8' },
-    { role:'🪑 ลูกค้า',   roomId:'dine', ni:3, color:'#d8d8c8' },
-    { role:'🪑 ลูกค้า',   roomId:'dine', ni:5, color:'#d8d8c8' },
+    { role:'👨‍🍳 พ่อครัว',  roomId:'kchi', ni:0, color:'#f0f0a0', anchorKey:'stove',   icon:'🍳' },
+    { role:'👨‍🍳 เชฟ',     roomId:'kchi', ni:2, color:'#f0f0a0', anchorKey:'stove',   icon:'🍳' },
+    { role:'🍜 เสิร์ฟ',   roomId:'dine', ni:1, color:'#a8d8f8', anchorKey:null,      icon:'🍜' },
+    { role:'🍜 เสิร์ฟ',   roomId:'dine', ni:4, color:'#a8d8f8', anchorKey:null,      icon:'🍜' },
+    { role:'🪑 ลูกค้า',   roomId:'dine', ni:3, color:'#d8d8c8', anchorKey:'dine',    icon:'🍽' },
+    { role:'🪑 ลูกค้า',   roomId:'dine', ni:5, color:'#d8d8c8', anchorKey:'dine',    icon:'🍽' },
   ],
   mall: [
-    { role:'👗 พนักงาน',   roomId:'fash', ni:1, color:'#a8d8f8' },
-    { role:'👗 พนักงาน',   roomId:'fash', ni:3, color:'#a8d8f8' },
-    { role:'🍔 พนักงาน',   roomId:'food', ni:0, color:'#a8d8f8' },
-    { role:'🎮 พนักงาน',   roomId:'ent',  ni:2, color:'#a8d8f8' },
-    { role:'🛒 นักช้อป',   roomId:'hall', ni:4, color:'#d8d8c8' },
-    { role:'🛒 นักช้อป',   roomId:'hall', ni:5, color:'#d8d8c8' },
-    { role:'🛒 นักช้อป',   roomId:'hall', ni:3, color:'#d8d8c8' },
+    { role:'👗 พนักงาน',   roomId:'fash', ni:1, color:'#a8d8f8', anchorKey:null,      icon:'👗' },
+    { role:'👗 พนักงาน',   roomId:'fash', ni:3, color:'#a8d8f8', anchorKey:null,      icon:'👗' },
+    { role:'🍔 พนักงาน',   roomId:'food', ni:0, color:'#a8d8f8', anchorKey:null,      icon:'🍔' },
+    { role:'🎮 พนักงาน',   roomId:'ent',  ni:2, color:'#a8d8f8', anchorKey:null,      icon:'🎮' },
+    { role:'🛒 นักช้อป',   roomId:'hall', ni:4, color:'#d8d8c8', anchorKey:null,      icon:'🛒' },
+    { role:'🛒 นักช้อป',   roomId:'hall', ni:5, color:'#d8d8c8', anchorKey:null,      icon:'🛒' },
+    { role:'🛒 นักช้อป',   roomId:'hall', ni:3, color:'#d8d8c8', anchorKey:null,      icon:'🛒' },
   ],
   hospital: [
-    { role:'🩺 แพทย์',    roomId:'ward', ni:0, color:'#90f0c0' },
-    { role:'🩺 แพทย์',    roomId:'ward', ni:2, color:'#90f0c0' },
-    { role:'💉 พยาบาล',   roomId:'ward', ni:4, color:'#a8d8f8' },
-    { role:'💉 พยาบาล',   roomId:'wait', ni:1, color:'#a8d8f8' },
-    { role:'🪑 ผู้ป่วย',   roomId:'wait', ni:3, color:'#d8d8c8' },
-    { role:'🪑 ผู้ป่วย',   roomId:'wait', ni:5, color:'#d8d8c8' },
+    { role:'🩺 แพทย์',    roomId:'ward', ni:0, color:'#90f0c0', anchorKey:'doctor',  icon:'🩺' },
+    { role:'🩺 แพทย์',    roomId:'ward', ni:2, color:'#90f0c0', anchorKey:'doctor',  icon:'🩺' },
+    { role:'💉 พยาบาล',   roomId:'ward', ni:4, color:'#a8d8f8', anchorKey:null,      icon:'💉' },
+    { role:'💉 พยาบาล',   roomId:'wait', ni:1, color:'#a8d8f8', anchorKey:null,      icon:'💉' },
+    { role:'🪑 ผู้ป่วย',   roomId:'wait', ni:3, color:'#d8d8c8', anchorKey:'chair',   icon:'⏳' },
+    { role:'🪑 ผู้ป่วย',   roomId:'wait', ni:5, color:'#d8d8c8', anchorKey:'chair',   icon:'⏳' },
   ],
   bank: [
-    { role:'💰 พนักงาน',  roomId:'bnkc', ni:0, color:'#a8d8f8' },
-    { role:'💰 พนักงาน',  roomId:'bnkc', ni:2, color:'#a8d8f8' },
-    { role:'🛡 รปภ.',     roomId:'bnkc', ni:4, color:'#f8e090' },
-    { role:'🪑 ลูกค้า',   roomId:'bnkc', ni:3, color:'#d8d8c8' },
-    { role:'🪑 ลูกค้า',   roomId:'bnkc', ni:5, color:'#d8d8c8' },
+    { role:'💰 พนักงาน',  roomId:'bnkc', ni:0, color:'#a8d8f8', anchorKey:'counter', icon:'💰' },
+    { role:'💰 พนักงาน',  roomId:'bnkc', ni:2, color:'#a8d8f8', anchorKey:'counter', icon:'💰' },
+    { role:'🛡 รปภ.',     roomId:'bnkc', ni:4, color:'#f8e090', anchorKey:null,      icon:'🛡' },
+    { role:'🪑 ลูกค้า',   roomId:'bnkc', ni:3, color:'#d8d8c8', anchorKey:'counter', icon:'💰' },
+    { role:'🪑 ลูกค้า',   roomId:'bnkc', ni:5, color:'#d8d8c8', anchorKey:'counter', icon:'💰' },
   ],
   gym: [
-    { role:'💪 เทรนเนอร์', roomId:'flor', ni:1, color:'#f8e090' },
-    { role:'🏋 สมาชิก',    roomId:'flor', ni:3, color:'#d8d8c8' },
-    { role:'🏋 สมาชิก',    roomId:'flor', ni:5, color:'#d8d8c8' },
-    { role:'🚿 สมาชิก',    roomId:'lckr', ni:0, color:'#d8d8c8' },
+    { role:'💪 เทรนเนอร์', roomId:'flor', ni:1, color:'#f8e090', anchorKey:null,       icon:'💪' },
+    { role:'🏋 สมาชิก',    roomId:'flor', ni:3, color:'#d8d8c8', anchorKey:'treadmill',icon:'🏃' },
+    { role:'🏋 สมาชิก',    roomId:'flor', ni:5, color:'#d8d8c8', anchorKey:'treadmill',icon:'🏃' },
+    { role:'🚿 สมาชิก',    roomId:'lckr', ni:0, color:'#d8d8c8', anchorKey:'locker',   icon:'🚿' },
   ],
   park: [
-    { role:'🌳 เจ้าหน้าที่', roomId:'grdn', ni:0, color:'#f8e090' },
-    { role:'🌿 คนออกกำลัง', roomId:'grdn', ni:2, color:'#d8d8c8' },
-    { role:'🌿 คนออกกำลัง', roomId:'grdn', ni:4, color:'#d8d8c8' },
-    { role:'🪑 คนพักผ่อน',  roomId:'grdn', ni:5, color:'#d8d8c8' },
+    { role:'🌳 เจ้าหน้าที่', roomId:'grdn', ni:0, color:'#f8e090', anchorKey:null,   icon:'🌳' },
+    { role:'🌿 คนออกกำลัง', roomId:'grdn', ni:2, color:'#d8d8c8', anchorKey:null,   icon:'🏃' },
+    { role:'🌿 คนออกกำลัง', roomId:'grdn', ni:4, color:'#d8d8c8', anchorKey:null,   icon:'🏃' },
+    { role:'🪑 คนพักผ่อน',  roomId:'grdn', ni:5, color:'#d8d8c8', anchorKey:'bench',icon:'🛋' },
   ],
   bts: [
-    { role:'🎫 เจ้าหน้าที่', roomId:'plat', ni:0, color:'#f8e090' },
-    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:1, color:'#d8d8c8' },
-    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:3, color:'#d8d8c8' },
-    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:4, color:'#d8d8c8' },
-    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:5, color:'#d8d8c8' },
+    { role:'🎫 เจ้าหน้าที่', roomId:'plat', ni:0, color:'#f8e090', anchorKey:null,   icon:'🎫' },
+    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:1, color:'#d8d8c8', anchorKey:'chair', icon:'📱' },
+    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:3, color:'#d8d8c8', anchorKey:'chair', icon:'📱' },
+    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:4, color:'#d8d8c8', anchorKey:null,    icon:'📱' },
+    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:5, color:'#d8d8c8', anchorKey:null,    icon:'📱' },
   ],
   store: [
-    { role:'🏪 แคชเชียร์', roomId:'stor', ni:0, color:'#f8e090' },
-    { role:'📦 พนักงาน',   roomId:'stor', ni:2, color:'#a8d8f8' },
-    { role:'🛒 ลูกค้า',    roomId:'stor', ni:3, color:'#d8d8c8' },
-    { role:'🛒 ลูกค้า',    roomId:'stor', ni:5, color:'#d8d8c8' },
+    { role:'🏪 แคชเชียร์', roomId:'stor', ni:0, color:'#f8e090', anchorKey:'counter',icon:'🏪' },
+    { role:'📦 พนักงาน',   roomId:'stor', ni:2, color:'#a8d8f8', anchorKey:null,     icon:'📦' },
+    { role:'🛒 ลูกค้า',    roomId:'stor', ni:3, color:'#d8d8c8', anchorKey:null,     icon:'🛒' },
+    { role:'🛒 ลูกค้า',    roomId:'stor', ni:5, color:'#d8d8c8', anchorKey:null,     icon:'🛒' },
   ],
   gas: [
-    { role:'⛽ พนักงานปั๊ม', roomId:'pump', ni:0, color:'#f8e090' },
-    { role:'⛽ พนักงานปั๊ม', roomId:'pump', ni:2, color:'#f8e090' },
-    { role:'🚗 ลูกค้า',     roomId:'pump', ni:4, color:'#d8d8c8' },
-    { role:'🚗 ลูกค้า',     roomId:'pump', ni:5, color:'#d8d8c8' },
+    { role:'⛽ พนักงานปั๊ม', roomId:'pump', ni:0, color:'#f8e090', anchorKey:'pump', icon:'⛽' },
+    { role:'⛽ พนักงานปั๊ม', roomId:'pump', ni:2, color:'#f8e090', anchorKey:'pump', icon:'⛽' },
+    { role:'🚗 ลูกค้า',     roomId:'pump', ni:4, color:'#d8d8c8', anchorKey:'pump', icon:'⛽' },
+    { role:'🚗 ลูกค้า',     roomId:'pump', ni:5, color:'#d8d8c8', anchorKey:'pump', icon:'⛽' },
   ],
 };
+
+// ─── Activity keyword → anchor key + icon ────────────────────────────────────
+const ACTIVITY_ANCHOR_RULES = [
+  { kw:['นอน','sleep','หลับ','waking up','winding down','bedtime','getting ready for bed'], anchorKey:'bed',         icon:'😴' },
+  { kw:['อาบน้ำ','shower','bath','แปรงฟัน'],                                               anchorKey:'bath',        icon:'🚿' },
+  { kw:['ดูทีวี','watch tv','television','netflix','series','ชมรายการ'],                   anchorKey:'sofa',        icon:'📺' },
+  { kw:['โซฟา','นั่งเล่น','relax','lounging','rest at home'],                              anchorKey:'sofa',        icon:'🛋' },
+  { kw:['อ่านหนังสือ','reading','read book'],                                               anchorKey:'sofa',        icon:'📖' },
+  { kw:['โทรศัพท์','phone call','video call','chat with','ส่งข้อความ'],                    anchorKey:'sofa',        icon:'📱' },
+  { kw:['ทำอาหาร','cook','cooking','เตรียมอาหาร','เตรียมเช้า'],                            anchorKey:'stove',       icon:'🍳' },
+  { kw:['กิน','ทาน','eat','eating','lunch','dinner','breakfast','มื้อ','ข้าวเช้า','ข้าวกลางวัน','ข้าวเย็น'], anchorKey:'dine', icon:'🍽' },
+  { kw:['กาแฟ','coffee','ชา','tea','คาเฟ่'],                                               anchorKey:'cafe_seat',   icon:'☕' },
+  { kw:['ทำงาน','working','at work','desk','type','computer','code','report'],             anchorKey:'desk',        icon:'💻' },
+  { kw:['ประชุม','meeting','conference','present'],                                         anchorKey:'conf',        icon:'📋' },
+  { kw:['ออกกำลัง','exercise','workout','treadmill','วิ่ง','run','fitness'],               anchorKey:'treadmill',   icon:'🏃' },
+  { kw:['yoga','stretch','ยืดเส้น','pilates'],                                              anchorKey:'floor',       icon:'🧘' },
+  { kw:['ตรวจ','check up','doctor','treatment','patient','ward'],                          anchorKey:'hospital_bed',icon:'💊' },
+  { kw:['รอ','waiting','wait','queue'],                                                     anchorKey:'chair',       icon:'⏳' },
+  { kw:['นั่ง','sitting','sit'],                                                            anchorKey:'chair',       icon:'🪑' },
+];
 
 // ─── Indoor Phaser Scene ──────────────────────────────────────────────────────
 class IndoorScene extends Phaser.Scene {
@@ -1401,6 +1419,112 @@ class IndoorScene extends Phaser.Scene {
 
     // ── Zoom & Pan + pinch-to-zoom (mobile) ───────────────────────────────
     _bindCameraControls(this, 0.4, 3.0, 0.001);
+  }
+
+  // Returns named furniture anchor slot arrays for a room (absolute canvas coords)
+  _getRoomAnchors(roomId, rx, ry, rw, rh) {
+    const cx = rx + rw / 2, cy = ry + rh / 2;
+    const A = {};
+    if (roomId === 'bed') {
+      // Two bed sleeping positions + desk chair
+      A.bed  = [{ x:cx-32, y:cy+14, isSleep:true }, { x:cx+2,  y:cy+14, isSleep:true }];
+      A.desk = [{ x:rx+32, y:ry+62, isSeat:true  }];
+    } else if (roomId === 'bath') {
+      A.bath = [{ x:cx, y:cy-10 }];
+    } else if (roomId === 'live') {
+      A.sofa = [
+        { x:cx-40, y:cy+30, isSeat:true },
+        { x:cx,    y:cy+30, isSeat:true },
+        { x:cx+40, y:cy+30, isSeat:true },
+      ];
+    } else if (roomId === 'cook') {
+      A.stove = [{ x:rx+35, y:ry+58 }, { x:rx+57, y:ry+58 }];
+      A.dine  = [{ x:cx-20, y:cy+80, isSeat:true }, { x:cx+34, y:cy+80, isSeat:true }];
+    } else if (roomId === 'work') {
+      A.desk = [];
+      [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]].forEach(([dc,dr]) => {
+        A.desk.push({ x:rx+28+dc*142+35, y:ry+58+dr*158+52, isSeat:true });
+      });
+    } else if (roomId === 'conf') {
+      A.conf = [];
+      [-52,-16,20].forEach(ox => {
+        A.conf.push({ x:cx+ox+11, y:cy-52+7,  isSeat:true });
+        A.conf.push({ x:cx+ox+11, y:cy+42+7,  isSeat:true });
+      });
+    } else if (roomId === 'lobb') {
+      A.desk = [{ x:cx, y:cy, isSeat:true }];
+    } else if (roomId === 'dine') {
+      A.dine = [];
+      [[0,0],[1,0],[2,0],[0,1],[1,1]].forEach(([tc,tr]) => {
+        const bx=rx+28+tc*148, by=ry+58+tr*168;
+        A.dine.push({ x:bx+21, y:by+67, isSeat:true });
+        A.dine.push({ x:bx+53, y:by+67, isSeat:true });
+      });
+    } else if (roomId === 'seat') {
+      A.cafe_seat = [];
+      [[0,0],[1,0],[0,1],[1,1]].forEach(([tc,tr]) => {
+        const bx=rx+55+tc*205, by=ry+75+tr*170;
+        A.cafe_seat.push({ x:bx,    y:by+80, isSeat:true });
+        A.cafe_seat.push({ x:bx+60, y:by+80, isSeat:true });
+      });
+    } else if (roomId === 'cbar') {
+      A.counter = [{ x:rx+50, y:ry+80 }, { x:rx+50, y:ry+140 }, { x:rx+50, y:ry+200 }];
+    } else if (roomId === 'kchi') {
+      A.stove = [{ x:cx, y:ry+80 }, { x:cx+30, y:ry+80 }];
+    } else if (roomId === 'ward') {
+      A.hospital_bed = [
+        { x:rx+108, y:ry+93,  isSleep:true },
+        { x:rx+108, y:ry+223, isSleep:true },
+        { x:rx+108, y:ry+353, isSleep:true },
+      ];
+      A.doctor = [{ x:rx+215, y:ry+93 }, { x:rx+215, y:ry+223 }, { x:rx+215, y:ry+353 }];
+    } else if (roomId === 'wait') {
+      A.chair = [
+        { x:rx+53,  y:ry+78,  isSeat:true },
+        { x:rx+143, y:ry+78,  isSeat:true },
+        { x:rx+53,  y:ry+178, isSeat:true },
+        { x:rx+143, y:ry+178, isSeat:true },
+        { x:rx+53,  y:ry+278, isSeat:true },
+        { x:rx+143, y:ry+278, isSeat:true },
+      ];
+    } else if (roomId === 'flor') {
+      A.treadmill = [
+        { x:rx+69,  y:ry+77  },
+        { x:rx+69,  y:ry+217 },
+        { x:rx+219, y:ry+77  },
+        { x:rx+219, y:ry+217 },
+      ];
+      A.floor = [{ x:rx+350, y:cy }];
+    } else if (roomId === 'lckr') {
+      A.locker = [{ x:rx+34, y:ry+130 }, { x:rx+82, y:ry+130 }, { x:rx+130, y:ry+130 }];
+    } else if (roomId === 'bnkc') {
+      A.counter = [{ x:cx-80, y:cy+50 }, { x:cx, y:cy+50 }, { x:cx+80, y:cy+50 }];
+    } else if (roomId === 'stor') {
+      A.counter = [{ x:rx+rw-45, y:cy }];
+    } else if (roomId === 'pump') {
+      A.pump = [{ x:cx-120, y:cy+28 }, { x:cx-40, y:cy+28 }, { x:cx+40, y:cy+28 }, { x:cx+120, y:cy+28 }];
+    } else if (roomId === 'plat') {
+      A.chair = [
+        { x:rx+99,  y:cy-51, isSeat:true },
+        { x:rx+359, y:cy-51, isSeat:true },
+        { x:rx+619, y:cy-51, isSeat:true },
+      ];
+    } else if (roomId === 'grdn') {
+      A.bench = [{ x:cx-20, y:cy+7, isSeat:true }, { x:cx+20, y:cy+7, isSeat:true }];
+    }
+    return A;
+  }
+
+  // Maps activity text to an anchor slot array + activity icon
+  _resolveActivityAnchor(activity, locStr, anchors) {
+    const text = ((activity || '') + ' ' + (locStr || '')).toLowerCase();
+    for (const { kw, anchorKey, icon } of ACTIVITY_ANCHOR_RULES) {
+      if (kw.some(k => text.includes(k))) {
+        const slots = anchors[anchorKey];
+        if (slots && slots.length > 0) return { slots, icon, anchorKey };
+      }
+    }
+    return null;
   }
 
   _drawRoom(room) {
@@ -1612,13 +1736,30 @@ class IndoorScene extends Phaser.Scene {
 
   _spawnAmbientNPCs(layout) {
     const defs = INDOOR_NPCS[this._bldg?.type] || [];
+    const anchorUsed = {};
     for (const def of defs) {
       const room = layout.rooms.find(r => r.id === def.roomId);
       if (!room) continue;
-      const m = 32;
-      const px = room.x + m + Math.random() * (room.w - m * 2);
-      const py = room.y + m + Math.random() * (room.h - m * 2 - 10);
-      const ni  = def.ni % 6;
+      const ni = def.ni % 6;
+
+      // Resolve anchor slot for this NPC role
+      const anchors = this._getRoomAnchors(room.id, room.x, room.y, room.w, room.h);
+      let px, py, anchorPos = null, isSitting = false;
+      if (def.anchorKey && anchors[def.anchorKey]) {
+        const aKey = `${room.id}_${def.anchorKey}`;
+        const si = anchorUsed[aKey] ?? 0;
+        anchorUsed[aKey] = si + 1;
+        const slot = anchors[def.anchorKey][si % anchors[def.anchorKey].length];
+        px = slot.x + (Math.random() - 0.5) * 6;
+        py = slot.y + (Math.random() - 0.5) * 6;
+        anchorPos = slot;
+        isSitting = slot.isSeat || false;
+      } else {
+        const m = 32;
+        px = room.x + m + Math.random() * (room.w - m * 2);
+        py = room.y + m + Math.random() * (room.h - m * 2 - 10);
+      }
+
       const spr = this.add.image(px, py, `npc_${ni}_r`)
         .setOrigin(0.5, 0.95).setScale(2).setDepth(100 + py);
       const nlbl = this.add.text(px, py - 56, def.role, {
@@ -1627,11 +1768,21 @@ class IndoorScene extends Phaser.Scene {
         backgroundColor:'#1a100a99', padding:{x:4,y:2},
         resolution:2,
       }).setOrigin(0.5, 1).setDepth(102 + py);
+
+      let atag = null;
+      if (def.icon) {
+        atag = this.add.text(px + 20, py - 56, def.icon, {
+          fontSize:'13px', resolution:2,
+          backgroundColor:'#00000077', padding:{x:2,y:1},
+        }).setOrigin(0.5, 1).setDepth(103 + py);
+      }
+
       const walker = {
-        spr, nlbl, albl:null, px, py, tx:px, ty:py,
+        spr, nlbl, atag, px, py, tx:px, ty:py,
         room, ci:ni, gd:'m', isPet:false, isNpc:true,
         facingRight: Math.random() > 0.5,
         waitTimer: Math.random() * 30,
+        anchorPos, isSitting, isSleeping:false,
       };
       this._walkers.push(walker);
       this._pickTarget(walker);
@@ -1641,6 +1792,8 @@ class IndoorScene extends Phaser.Scene {
   _spawnChars(layout) {
     const margin = 30;
     const roomCounts = {};
+    const anchorUsed = {};
+
     for (const ch of this._charData) {
       const act = (ch.activity || '').toLowerCase();
       const loc = (ch.locStr   || '').toLowerCase();
@@ -1649,32 +1802,69 @@ class IndoorScene extends Phaser.Scene {
       const rid = room.id;
       roomCounts[rid] = (roomCounts[rid] || 0) + 1;
       const idx = roomCounts[rid] - 1;
-      const cols = 3;
-      const cellW = (room.w - margin * 2) / cols;
-      const rows  = Math.max(1, Math.ceil(this._charData.length / cols));
-      const cellH = (room.h - margin * 2 - 10) / rows;
-      const px = room.x + margin + (idx % cols) * cellW + cellW * (0.25 + Math.random() * 0.5);
-      const py = room.y + margin + (Math.floor(idx / cols) % rows) * cellH + cellH * (0.25 + Math.random() * 0.5);
+
+      // Try furniture anchor for this character's activity
+      const anchors = this._getRoomAnchors(rid, room.x, room.y, room.w, room.h);
+      const resolved = this._resolveActivityAnchor(act, loc, anchors);
+
+      let px, py, anchorPos = null, actIcon = null, isSleeping = false, isSitting = false;
+      if (resolved) {
+        const aKey = `${rid}_${resolved.anchorKey}`;
+        const si = anchorUsed[aKey] ?? 0;
+        anchorUsed[aKey] = si + 1;
+        const slot = resolved.slots[si % resolved.slots.length];
+        px = slot.x + (Math.random() - 0.5) * 4;
+        py = slot.y + (Math.random() - 0.5) * 4;
+        anchorPos  = slot;
+        actIcon    = resolved.icon;
+        isSleeping = slot.isSleep || false;
+        isSitting  = slot.isSeat  || false;
+      } else {
+        const cols = 3;
+        const rows = Math.max(1, Math.ceil(this._charData.length / cols));
+        const cellW = (room.w - margin * 2) / cols;
+        const cellH = (room.h - margin * 2 - 10) / rows;
+        px = room.x + margin + (idx % cols) * cellW + cellW * (0.3 + Math.random() * 0.4);
+        py = room.y + margin + (Math.floor(idx / cols) % rows) * cellH + cellH * (0.3 + Math.random() * 0.4);
+      }
 
       const gd = ch.gender === 'female' ? 'f' : 'm';
       const isPet = ch.character_type === 'pet';
       const spr = this.add.image(px, py, isPet ? `pet_${ch.id}_r` : `char_${ch.id}_r_${gd}`)
         .setOrigin(0.5, 0.95).setScale(2).setDepth(100 + py);
+      if (isSleeping) spr.setAngle(90);
+
       const _ia = ch.avatar_emoji || (ch.character_type === 'pet' ? '🐾' : '👤');
       const _in = ch.nickname || ch.name.split(' ')[0];
-      const nlbl = this.add.text(px, py - 56, `${_ia} ${_in}`, {
+      const lblOff = isSleeping ? 28 : 56;
+      const nlbl = this.add.text(px, py - lblOff, `${_ia} ${_in}`, {
         fontFamily:'monospace', fontSize:'11px', color:'#f8f0d0',
         stroke:'#1a0804', strokeThickness:4,
         backgroundColor:'#1a100aaa', padding:{x:5,y:3},
         resolution:2,
       }).setOrigin(0.5, 1).setDepth(102 + py);
-      const walker = { spr, nlbl, px, py, tx:px, ty:py, room, id: ch.id, gd, isPet, facingRight:true, waitTimer: Math.random() * 20 };
+
+      let atag = null;
+      if (actIcon) {
+        atag = this.add.text(px + 22, py - lblOff, actIcon, {
+          fontSize:'14px', resolution:2,
+          backgroundColor:'#00000088', padding:{x:2,y:1},
+        }).setOrigin(0.5, 1).setDepth(103 + py);
+      }
+
+      const walker = { spr, nlbl, atag, px, py, tx:px, ty:py, room, id:ch.id, gd, isPet, facingRight:true, waitTimer: Math.random() * 20, anchorPos, actIcon, isSleeping, isSitting };
       this._walkers.push(walker);
-      this._pickTarget(walker);  // sets initial tx/ty only
+      this._pickTarget(walker);
     }
   }
 
   _pickTarget(w) {
+    if (w.anchorPos) {
+      // Stay very close to furniture anchor — tiny jitter so sprite breathes
+      w.tx = w.anchorPos.x + (Math.random() - 0.5) * 8;
+      w.ty = w.anchorPos.y + (Math.random() - 0.5) * 8;
+      return;
+    }
     const m = 30, r = w.room;
     w.tx = r.x + m + Math.random() * (r.w - m * 2);
     w.ty = r.y + m + Math.random() * (r.h - m * 2 - 10);
@@ -1710,21 +1900,27 @@ class IndoorScene extends Phaser.Scene {
     const LERP = 0.055;
     const dt   = delta / 16;
     for (const w of this._walkers) {
-      // Waiting between moves — just count down
       if (w.waitTimer > 0) { w.waitTimer -= dt; continue; }
 
       const dx = w.tx - w.px, dy = w.ty - w.py;
 
-      // Arrived at target — pick new spot and pause briefly
       if (Math.hypot(dx, dy) < 5) {
         this._pickTarget(w);
-        w.waitTimer = 18 + Math.random() * 55;  // ~0.3–1.2 s pause
+        // Sleeping: very long pause; anchored: medium pause; free wandering: short
+        w.waitTimer = w.isSleeping ? 400 + Math.random() * 300
+                    : w.anchorPos  ? 80  + Math.random() * 120
+                    :                18  + Math.random() * 55;
         continue;
       }
 
-      // Move toward target
       if (Math.abs(dx) > 1) w.facingRight = dx > 0;
       w.px += dx * LERP; w.py += dy * LERP;
+
+      // Sleeping characters rotate sprite 90° to look horizontal; others stay upright
+      const targetAngle = w.isSleeping ? 90 : 0;
+      const curAngle    = w.spr.angle ?? 0;
+      w.spr.setAngle(curAngle + (targetAngle - curAngle) * 0.18);
+
       if (w.isPet) {
         w.spr.setTexture(`pet_${w.id ?? w.ci}_${w.facingRight?'r':'l'}`);
       } else if (w.isNpc) {
@@ -1732,8 +1928,13 @@ class IndoorScene extends Phaser.Scene {
       } else {
         w.spr.setTexture(`char_${w.id ?? w.ci}_${w.facingRight?'r':'l'}_${w.gd}`);
       }
+
       w.spr.setPosition(w.px, w.py).setDepth(100 + w.py);
-      w.nlbl.setPosition(w.px, w.py - 56).setDepth(102 + w.py);
+
+      // Label offset: shorter when sleeping (sprite is rotated, head moved)
+      const lblOff = w.isSleeping ? 28 : 56;
+      w.nlbl.setPosition(w.px, w.py - lblOff).setDepth(102 + w.py);
+      if (w.atag) w.atag.setPosition(w.px + 22, w.py - lblOff).setDepth(103 + w.py);
     }
   }
 }
