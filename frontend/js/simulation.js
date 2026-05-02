@@ -173,6 +173,11 @@ class SimulationController {
       renderer.updateCharacterPosition(charId, result.location, result.activity);
       renderer.setSimTime(result.next_sim_time);
       renderer.updateEmotionState(charId, result.emotion_after);
+      const _aIcon = {
+        respond_message:'💬', initiate_contact:'💬',
+        confront:'😤', vent:'😤', seek_comfort:'🤗', withdraw:'😶',
+      }[result.action_type];
+      if (_aIcon) renderer.triggerEmotionBurst(charId, _aIcon);
     } catch (e) { /* renderer errors must not break simulation or log */ }
 
     const _notableActions = ["respond_message","initiate_contact","confront","seek_comfort","vent","withdraw"];

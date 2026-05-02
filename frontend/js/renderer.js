@@ -6,12 +6,13 @@
 
 // ─── Shared state bridge (renderer public API → Phaser scene) ─────────────────
 const _rs = {
-  simHour:  8,
-  chars:    [],            // [{id, name, nickname, gender, avatar_emoji, character_type, colorIdx}]
-  moves:    new Map(),     // charId → {bKey, activity}
-  emotions: new Map(),     // charId → {happiness, stress, …}
-  bubbles:  new Map(),     // charId → {text, born}
-  _scene:   null,
+  simHour:   8,
+  chars:     [],           // [{id, name, nickname, gender, avatar_emoji, character_type, colorIdx}]
+  moves:     new Map(),    // charId → {locStr, activity}
+  emotions:  new Map(),    // charId → {happiness, stress, …}
+  emoBursts: new Map(),    // charId → {icon, born, duration} — timed emotion pop
+  bubbles:   new Map(),    // charId → {text, born}
+  _scene:    null,
 };
 
 // ─── Isometric projection (48×24 tiles — fits 15×13 grid in 800×450) ─────────
@@ -1040,13 +1041,20 @@ class IsoScene extends Phaser.Scene {
     for (const [id, obj] of this._charObjs) {
       const visibility = obj._alpha ?? 1;
       if (visibility < 0.3) continue; // skip fully-indoor chars
-      // Emotion icon
-      const emo = _rs.emotions.get(id);
-      if (emo) {
-        const icon = this._dominantEmoIcon(emo);
-        if (icon) {
-          const ey = obj.py - 68 + Math.sin(this._tick*0.04 + id)*3;
-          this._drawEmojiAt(id, icon, obj.px, ey);
+      // Emotion burst (timed pop — triggered by tick, fades out)
+      const burst = _rs.emoBursts.get(id);
+      if (burst) {
+        const age = this._tick - burst.born;
+        if (age >= burst.duration) {
+          _rs.emoBursts.delete(id);
+        } else {
+          const fadeIn  = Math.min(1, age / 12);
+          const fadeOut = age > burst.duration * 0.65
+            ? Math.max(0, (burst.duration - age) / (burst.duration * 0.35))
+            : 1;
+          const alpha = fadeIn * fadeOut * visibility;
+          const ey = obj.py - 68 + Math.sin(this._tick * 0.04 + id) * 3;
+          this._drawEmojiAt(id, burst.icon, obj.px, ey, alpha);
         }
       }
       // Speech bubble
@@ -1082,7 +1090,7 @@ class IsoScene extends Phaser.Scene {
     return '😐';
   }
 
-  _drawEmojiAt(charId, emoji, x, y) {
+  _drawEmojiAt(charId, emoji, x, y, alpha = 1) {
     if (!this._emoPool) this._emoPool = new Map();
     let t = this._emoPool.get(charId);
     if (!t) {
@@ -1092,7 +1100,7 @@ class IsoScene extends Phaser.Scene {
       }).setOrigin(0.5, 0.5).setDepth(500010);
       this._emoPool.set(charId, t);
     }
-    t.setText(emoji).setPosition(x, y).setVisible(true);
+    t.setText(emoji).setPosition(x, y).setAlpha(alpha).setVisible(alpha > 0.02);
   }
 
   _drawBubble(charId, g, text, x, y, alpha) {
@@ -1701,7 +1709,19 @@ const renderer = {
   },
 
   updateEmotionState(charId, emotions) {
-    if (emotions) _rs.emotions.set(charId, emotions);
+    if (!emotions) return;
+    _rs.emotions.set(charId, emotions);
+    const scene = _rs._scene;
+    if (!scene) return;
+    const icon = scene._dominantEmoIcon(emotions);
+    if (icon && icon !== '😐') {
+      _rs.emoBursts.set(charId, { icon, born: scene._tick ?? 0, duration: 200 });
+    }
+  },
+
+  triggerEmotionBurst(charId, icon) {
+    if (!icon) return;
+    _rs.emoBursts.set(charId, { icon, born: _rs._scene?._tick ?? 0, duration: 200 });
   },
 
   showCharacterMessage(charId, text) {
