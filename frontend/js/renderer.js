@@ -1993,6 +1993,12 @@ class IndoorScene extends Phaser.Scene {
         .setOrigin(0.5, 0.95).setScale(2).setDepth(100 + py);
       if (isSleeping) spr.setAngle(90);
 
+      const _charClickFn = () => {
+        if (this._didDrag || renderer._modalOpen || Date.now() - (renderer._modalJustClosed || 0) < 200) return;
+        if (renderer.onCharacterClick) renderer.onCharacterClick(ch.id);
+      };
+      spr.setInteractive({ useHandCursor: true }).on('pointerup', _charClickFn);
+
       const _ia = ch.avatar_emoji || (ch.character_type === 'pet' ? '🐾' : '👤');
       const _in = ch.nickname || ch.name.split(' ')[0];
       const lblOff = isSleeping ? 28 : 56;
@@ -2001,7 +2007,8 @@ class IndoorScene extends Phaser.Scene {
         stroke:'#1a0804', strokeThickness:4,
         backgroundColor:'#1a100aaa', padding:{x:5,y:3},
         resolution:2,
-      }).setOrigin(0.5, 1).setDepth(102 + py);
+      }).setOrigin(0.5, 1).setDepth(102 + py)
+        .setInteractive({ useHandCursor: true }).on('pointerup', _charClickFn);
 
       let atag = null;
       if (actIcon) {
