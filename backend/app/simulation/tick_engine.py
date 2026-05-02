@@ -16,7 +16,10 @@ from ..brain.emotion_engine import (
     parse_ai_emotion_delta, EmotionDelta, EMOTION_KEYS,
 )
 from ..brain.decision_engine import run_decision
-from ..brain.memory_system import add_memory, MemoryLayer
+from ..brain.memory_system import (
+    add_memory, MemoryLayer,
+    create_daily_summary, prune_old_memories,
+)
 from ..brain.relationship_manager import (
     update_relationship, derive_relationship_deltas_from_action,
     build_relationship_context_string, get_or_create_relationship,
@@ -155,6 +158,8 @@ async def run_tick(
 
     # 8. Store memories — short-term always; significant events to episodic; growth to semantic
     memory_text = decision_result.get("memory_to_store")
+    max_delta_val = max((abs(float(v)) for v in ai_delta_raw.values()), default=0.0)
+
     if memory_text:
         await add_memory(
             db=db,
@@ -167,9 +172,22 @@ async def run_tick(
             sim_day=sim_day,
             sim_time=sim_time,
         )
+    else:
+        # Gap-fill: always record what the character did this tick so no hour is lost
+        routine_note = f"{state.current_activity} ที่ {state.current_location}"
+        await add_memory(
+            db=db,
+            character_id=character_id,
+            content=routine_note,
+            layer=MemoryLayer.SHORT_TERM,
+            emotional_valence=0.0,
+            emotional_intensity=0.05,
+            importance_score=0.1,
+            sim_day=sim_day,
+            sim_time=sim_time,
+        )
 
-    # Auto-store significant emotional events to episodic memory
-    max_delta_val = max((abs(float(v)) for v in ai_delta_raw.values()), default=0.0)
+    # Auto-promote to episodic when emotion impact is significant
     if max_delta_val >= 10.0 and memory_text:
         await add_memory(
             db=db,
@@ -281,8 +299,13 @@ async def run_tick(
 
     if crossed_midnight:
         state.sim_day = sim_day + 1
-
-    await db.commit()
+        await db.commit()  # commit state first so summary queries see current data
+        # Compact today's short-term memories into one episodic daily summary
+        await create_daily_summary(db, character_id, sim_day)
+        # Prune long-term memory banks to stay within capacity limits
+        await prune_old_memories(db, character_id)
+    else:
+        await db.commit()
 
     return {
         "tick_number": tick_number,
