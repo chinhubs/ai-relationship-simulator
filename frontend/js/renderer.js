@@ -1121,6 +1121,406 @@ class IsoScene extends Phaser.Scene {
   clearFollow()     { this._followId = null;   }
 }
 
+// ─── Indoor Scene room layouts (top-down 2D, canvas 800×450) ─────────────────
+const INDOOR_LAYOUTS = {
+  house:      { title:'🏠 ภายในบ้าน',          bg:0x2a1a0a, rooms:[
+    { id:'bed',  x:5,   y:45, w:255, h:190, fl:0xf0e4cc, wl:0xc4a878, label:'🛏 ห้องนอน',
+      kw:['นอน','sleep','rest','bedroom','ตื่น','หลับ','waking','getting ready','winding'] },
+    { id:'bath', x:264, y:45, w:155, h:190, fl:0xd8eef8, wl:0x80b8d0, label:'🚿 ห้องน้ำ',
+      kw:['อาบน้ำ','shower','bath','toilet','ห้องน้ำ','แปรงฟัน'] },
+    { id:'dflt', x:423, y:45, w:372, h:190, fl:0xe8e0d0, wl:0xa09878, label:'🚪 ทางเดิน', kw:[], def:true },
+    { id:'live', x:5,   y:239,w:255, h:206, fl:0xeee8d8, wl:0xb8a880, label:'📺 ห้องนั่งเล่น',
+      kw:['ดูทีวี','watch','tv','relax','พักผ่อน','นั่งเล่น','sofa','living'] },
+    { id:'cook', x:264, y:239,w:155, h:206, fl:0xf0ece0, wl:0xc0b090, label:'🍳 ครัว',
+      kw:['กิน','ทาน','ครัว','cook','eat','breakfast','อาหาร','ข้าว','kitchen','coffee','กาแฟ'] },
+    { id:'grdn', x:423, y:239,w:372, h:206, fl:0x88c048, wl:0x4a8028, label:'🌿 สวน',
+      kw:['garden','สวน','outdoor','outside','yard'] },
+  ]},
+  office:     { title:'🏢 ภายในออฟฟิศ',        bg:0x101820, rooms:[
+    { id:'work', x:5,   y:45, w:490, h:400, fl:0xe0e8f0, wl:0x7090b8, label:'💻 พื้นที่ทำงาน',
+      kw:['ทำงาน','work','desk','computer','office','สำนักงาน','ออฟฟิศ','at work','working'], def:true },
+    { id:'conf', x:499, y:45, w:296, h:195, fl:0xd0d8e8, wl:0x5878a8, label:'📋 ห้องประชุม',
+      kw:['ประชุม','meeting','conference','present'] },
+    { id:'lobb', x:499, y:244,w:296, h:201, fl:0xd8e0e8, wl:0x6888a8, label:'🚪 ล็อบบี้', kw:[] },
+  ]},
+  cafe:       { title:'☕ ภายในคาเฟ่',          bg:0x1e1208, rooms:[
+    { id:'seat', x:5,   y:45, w:490, h:400, fl:0xf0e8d8, wl:0xa07840, label:'🪑 โซนนั่ง',
+      kw:['นั่ง','sit','coffee','กาแฟ','ชา','tea','relax','คาเฟ่'], def:true },
+    { id:'cbar', x:499, y:45, w:296, h:400, fl:0xe8dcc8, wl:0x906830, label:'☕ เคาน์เตอร์',
+      kw:['order','สั่ง','barista','brew','counter','bar'] },
+  ]},
+  restaurant: { title:'🍜 ภายในร้านอาหาร',      bg:0x1a0a04, rooms:[
+    { id:'dine', x:5,   y:45, w:490, h:400, fl:0xf0e4d0, wl:0xa87050, label:'🍽 โต๊ะอาหาร',
+      kw:['กิน','ทาน','eat','food','lunch','dinner','อาหาร','ข้าว','restaurant'], def:true },
+    { id:'kchi', x:499, y:45, w:296, h:400, fl:0xf0ece0, wl:0xb08040, label:'🍳 ครัว',
+      kw:['ครัว','cook','chef','kitchen','prepare'] },
+  ]},
+  mall:       { title:'🛍 ภายในห้าง',            bg:0x201828, rooms:[
+    { id:'fash', x:5,   y:45, w:244, h:195, fl:0xe8e0f0, wl:0x9878c0, label:'👗 แฟชั่น',
+      kw:['shopping','ซื้อของ','shop','clothes','fashion','แฟชั่น','เดินห้าง'] },
+    { id:'food', x:253, y:45, w:244, h:195, fl:0xf0e8e0, wl:0xc09878, label:'🍔 ฟู้ดคอร์ท',
+      kw:['food court','กิน','ทาน','eat','ข้าว','อาหาร'] },
+    { id:'ent',  x:501, y:45, w:294, h:195, fl:0xe8f0e0, wl:0x78a870, label:'🎮 บันเทิง',
+      kw:['cinema','movie','ภาพยนตร์','game','entertainment'] },
+    { id:'hall', x:5,   y:244,w:790, h:201, fl:0xf0ece8, wl:0xb0a898, label:'🚶 โซนกลาง', kw:[], def:true },
+  ]},
+  hospital:   { title:'🏥 ภายในโรงพยาบาล',      bg:0x101820, rooms:[
+    { id:'ward', x:5,   y:45, w:490, h:400, fl:0xecf8f8, wl:0x70b0c0, label:'🛏 ห้องตรวจ',
+      kw:['ตรวจ','check','doctor','หมอ','nurse','ward','พยาบาล','treatment'], def:true },
+    { id:'wait', x:499, y:45, w:296, h:400, fl:0xe8f0f8, wl:0x8098b8, label:'⏳ ห้องรอ',
+      kw:['รอ','wait','reception','ล็อบบี้'] },
+  ]},
+  bank:       { title:'🏦 ภายในธนาคาร',          bg:0x181408, rooms:[
+    { id:'bnkc', x:5,   y:45, w:490, h:400, fl:0xf8f0d8, wl:0xc8a838, label:'💰 เคาน์เตอร์',
+      kw:['ธนาคาร','bank','โอนเงิน','ถอนเงิน','atm','ฝาก','ถอน'], def:true },
+    { id:'vlt',  x:499, y:45, w:296, h:400, fl:0xf0e8c8, wl:0xb09028, label:'🔒 ห้องจัดการ', kw:[] },
+  ]},
+  gym:        { title:'🏋 ภายในฟิตเนส',          bg:0x1a0808, rooms:[
+    { id:'flor', x:5,   y:45, w:490, h:400, fl:0xf0e8e0, wl:0xb08070, label:'💪 โซนออกกำลัง',
+      kw:['gym','ออกกำลัง','exercise','fitness','workout','วิ่ง','yoga','กีฬา'], def:true },
+    { id:'lckr', x:499, y:45, w:296, h:400, fl:0xe8e0d8, wl:0xa07868, label:'🚿 ล็อกเกอร์',
+      kw:['locker','shower','change','อาบน้ำ'] },
+  ]},
+  park:       { title:'🌳 ภายในสวน',             bg:0x1a2810, rooms:[
+    { id:'grdn', x:5, y:45, w:790, h:400, fl:0x70b840, wl:0x3a7020, label:'🌳 พื้นที่สีเขียว',
+      kw:['park','สวน','นั่งเล่น','outdoor','garden','เดิน','relax'], def:true },
+  ]},
+  bts:        { title:'🚉 ภายใน BTS',            bg:0x101820, rooms:[
+    { id:'plat', x:5, y:45, w:790, h:400, fl:0xe0e8f0, wl:0x6080a8, label:'🚇 ชานชาลา',
+      kw:['bts','รถไฟฟ้า','station','สถานี','รอรถ'], def:true },
+  ]},
+  store:      { title:'🏪 ภายในร้านสะดวก',       bg:0x0a1008, rooms:[
+    { id:'stor', x:5, y:45, w:790, h:400, fl:0xeeeee8, wl:0xa0a090, label:'🛒 พื้นที่ขาย',
+      kw:['store','ร้านสะดวก','shopping','ซื้อ','convenience','7-eleven'], def:true },
+  ]},
+  gas:        { title:'⛽ ปั๊มน้ำมัน',           bg:0x181408, rooms:[
+    { id:'pump', x:5, y:45, w:790, h:400, fl:0xf0e8c8, wl:0xb0a040, label:'⛽ จุดเติมน้ำมัน',
+      kw:['gas','ปั๊ม','น้ำมัน','fill','refuel'], def:true },
+  ]},
+};
+
+// ─── Indoor Phaser Scene ──────────────────────────────────────────────────────
+class IndoorScene extends Phaser.Scene {
+  constructor() { super({ key: 'IndoorScene' }); }
+
+  init(data) {
+    this._bldg     = data?.building || null;
+    this._charData = data?.chars    || [];
+  }
+
+  create() {
+    if (!this._bldg) { this.scene.sleep(); return; }
+    const layout = INDOOR_LAYOUTS[this._bldg.type] || INDOOR_LAYOUTS.house;
+    this._walkers = [];
+
+    this.add.rectangle(400, 225, 800, 450, layout.bg).setDepth(0);
+    for (const room of layout.rooms) this._drawRoom(room);
+    this._spawnChars(layout);
+    this._drawHeader(layout.title);
+  }
+
+  _drawRoom(room) {
+    const { x, y, w, h, fl, wl, label, id } = room;
+    const g = this.add.graphics().setDepth(10);
+    g.fillStyle(fl); g.fillRect(x, y, w, h);
+    // Tile grid
+    g.lineStyle(1, fl - 0x141414, 0.22);
+    for (let gx = x + 22; gx < x + w - 1; gx += 22) { g.beginPath(); g.moveTo(gx, y+1); g.lineTo(gx, y+h-1); g.strokePath(); }
+    for (let gy = y + 22; gy < y + h - 1; gy += 22) { g.beginPath(); g.moveTo(x+1, gy); g.lineTo(x+w-1, gy); g.strokePath(); }
+    // Wall border
+    g.lineStyle(3, wl); g.strokeRect(x, y, w, h);
+    // Label
+    this.add.text(x + 7, y + 6, label, {
+      fontFamily:'monospace', fontSize:'8px', color:'#1a0a04',
+      stroke:'#ffffff', strokeThickness:2, resolution:2,
+    }).setDepth(20);
+    // Furniture
+    this._drawFurniture(id, x, y, w, h, fl);
+  }
+
+  _drawFurniture(id, x, y, w, h) {
+    const g  = this.add.graphics().setDepth(16);
+    const cx = x + w / 2, cy = y + h / 2;
+
+    if (id === 'bed') {
+      // Bed
+      g.fillStyle(0xc8a0e0); g.fillRect(cx-50, cy-10, 82, 58);
+      g.fillStyle(0x9870b8); g.fillRect(cx-50, cy-10, 82, 9);
+      g.fillStyle(0xf0e8ff); g.fillRect(cx-46, cy-1, 28, 20);
+      g.fillStyle(0xf0e8ff); g.fillRect(cx-14, cy-1, 28, 20);
+      g.lineStyle(2, 0x7050a0); g.strokeRect(cx-50, cy-10, 82, 58);
+      // Nightstand
+      g.fillStyle(0xb89060); g.fillRect(cx+38, cy-2, 24, 22);
+      g.fillStyle(0xffe060); g.fillCircle(cx+50, cy+4, 4);
+      // Desk
+      g.fillStyle(0xb89060); g.fillRect(x+6, y+28, 52, 30);
+      g.fillStyle(0x202838); g.fillRect(x+9, y+32, 34, 20);
+      g.lineStyle(1, 0x806040); g.strokeRect(x+6, y+28, 52, 30);
+    } else if (id === 'bath') {
+      // Bathtub
+      g.fillStyle(0x90c8e8); g.fillRect(cx-32, cy-44, 54, 74);
+      g.fillStyle(0xbce0f8); g.fillRect(cx-28, cy-40, 46, 62);
+      g.lineStyle(2, 0x4888a8); g.strokeRect(cx-32, cy-44, 54, 74);
+      // Toilet
+      g.fillStyle(0xf4f4f4); g.fillEllipse(x+28, cy+32, 32, 40);
+      g.fillStyle(0xdadada); g.fillRect(x+14, cy+14, 28, 10);
+      g.lineStyle(1, 0xb0b0b0); g.strokeEllipse(x+28, cy+32, 32, 40);
+      // Sink
+      g.fillStyle(0xeef8f8); g.fillEllipse(cx+32, y+34, 28, 22);
+      g.lineStyle(1, 0x80b0c0); g.strokeEllipse(cx+32, y+34, 28, 22);
+    } else if (id === 'live') {
+      // Sofa
+      g.fillStyle(0x7860b0); g.fillRect(cx-65, cy+10, 110, 45);
+      g.fillStyle(0x9888d0); g.fillRect(cx-61, cy+15, 102, 30);
+      g.fillStyle(0x5848a0); g.fillRect(cx-65, cy+2, 110, 12);
+      g.lineStyle(2, 0x4838a0); g.strokeRect(cx-65, cy+10, 110, 45);
+      // TV
+      g.fillStyle(0x181818); g.fillRect(cx-52, cy-56, 86, 50);
+      g.fillStyle(0x2a3848); g.fillRect(cx-48, cy-52, 78, 40);
+      g.lineStyle(2, 0x0a0a0a); g.strokeRect(cx-52, cy-56, 86, 50);
+      // Coffee table
+      g.fillStyle(0xb89060); g.fillRect(cx-30, cy+60, 52, 28);
+      g.lineStyle(1, 0x806040); g.strokeRect(cx-30, cy+60, 52, 28);
+    } else if (id === 'cook') {
+      // Counter
+      g.fillStyle(0xe0d0b0); g.fillRect(x+6, y+24, w-12, 26);
+      g.fillStyle(0xc0b090); g.fillRect(x+6, y+24, w-12, 6);
+      g.lineStyle(1, 0xa09070); g.strokeRect(x+6, y+24, w-12, 26);
+      // Burners
+      g.fillStyle(0x383838);
+      [[x+24,y+34],[x+46,y+34]].forEach(([bx,by]) => { g.fillCircle(bx,by,8); g.fillStyle(0x585858); g.fillCircle(bx,by,4); g.fillStyle(0x383838); });
+      // Dining table + chairs
+      g.fillStyle(0xd0b878); g.fillRect(cx-38, cy+18, 68, 52);
+      g.lineStyle(2, 0xa08848); g.strokeRect(cx-38, cy+18, 68, 52);
+      [-36,18].forEach(ox => { g.fillStyle(0xa08040); g.fillRect(cx+ox, cy+74, 26, 18); g.lineStyle(1,0x806030); g.strokeRect(cx+ox, cy+74, 26, 18); });
+    } else if (id === 'grdn') {
+      // Garden trees
+      [[cx-110,cy-50],[cx+70,cy-35],[cx-50,cy+55],[cx+110,cy+40]].forEach(([tx,ty]) => {
+        g.fillStyle(0x284818); g.fillCircle(tx, ty, 28);
+        g.fillStyle(0x3a6828); g.fillCircle(tx, ty, 22);
+        g.fillStyle(0x50882a); g.fillCircle(tx, ty-3, 15);
+        g.fillStyle(0x4c2e0e); g.fillRect(tx-4, ty+17, 8, 20);
+      });
+      // Bench
+      g.fillStyle(0xc8a060); g.fillRect(cx-35, cy, 65, 15);
+      g.lineStyle(2, 0x906030); g.strokeRect(cx-35, cy, 65, 15);
+    } else if (id === 'work') {
+      // Desks 2×3 grid
+      [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]].forEach(([dc,dr]) => {
+        const bx=x+28+dc*142, by=y+58+dr*158;
+        g.fillStyle(0xc0b890); g.fillRect(bx,by,70,40);
+        g.fillStyle(0x202838); g.fillRect(bx+8,by+6,46,26);
+        g.fillStyle(0x3848a0); g.fillRect(bx+14,by+10,32,16);
+        g.lineStyle(1,0x908870); g.strokeRect(bx,by,70,40);
+      });
+    } else if (id === 'conf') {
+      // Conference table
+      g.fillStyle(0xd0c890); g.fillRect(cx-65,cy-38,115,78);
+      g.lineStyle(2, 0xa09860); g.strokeRect(cx-65,cy-38,115,78);
+      [-52,-16,20].forEach(ox => {
+        g.fillStyle(0x706850); g.fillRect(cx+ox,cy-52,22,14);
+        g.fillStyle(0x706850); g.fillRect(cx+ox,cy+42,22,14);
+      });
+    } else if (id === 'dine') {
+      // Restaurant tables (3+2)
+      [[0,0],[1,0],[2,0],[0,1],[1,1]].forEach(([tc,tr]) => {
+        const bx=x+28+tc*148, by=y+58+tr*168;
+        g.fillStyle(0xd0b878); g.fillRect(bx,by,86,55);
+        g.lineStyle(2,0xa08848); g.strokeRect(bx,by,86,55);
+        [[8,58],[40,58]].forEach(([ox,oy]) => { g.fillStyle(0xa08040); g.fillRect(bx+ox,by+oy,26,18); g.lineStyle(1,0x806030); g.strokeRect(bx+ox,by+oy,26,18); });
+      });
+    } else if (id === 'seat') {
+      // Cafe round tables
+      [[0,0],[1,0],[0,1],[1,1]].forEach(([tc,tr]) => {
+        const bx=x+55+tc*205, by=y+75+tr*170;
+        g.fillStyle(0xd8c888); g.fillEllipse(bx+30,by+28,68,52);
+        g.lineStyle(2,0xa09848); g.strokeEllipse(bx+30,by+28,68,52);
+        [[-10,56]].forEach(([ox,oy]) => { g.fillStyle(0x9c8848); g.fillRect(bx+ox,by+oy,20,42); g.lineStyle(1,0x7a6830); g.strokeRect(bx+ox,by+oy,20,42); });
+      });
+    } else if (id === 'cbar') {
+      // Cafe bar counter
+      g.fillStyle(0xd0b870); g.fillRect(x+6, y+24, 26, h-48);
+      g.fillStyle(0xb89050); g.fillRect(x+6, y+24, 26, 8);
+      g.lineStyle(2, 0x907030); g.strokeRect(x+6, y+24, 26, h-48);
+      g.fillStyle(0x484030); g.fillRect(x+10, y+38, 18, 22);
+      g.fillStyle(0xc0b840); g.fillRect(x+12, y+40, 14, 10);
+    } else if (id === 'bnkc') {
+      // Bank teller windows
+      g.fillStyle(0xe8d890); g.fillRect(x+6, y+24, w-12, 28);
+      g.lineStyle(2, 0xb09830); g.strokeRect(x+6, y+24, w-12, 28);
+      [50,140,230,320,410].forEach(ox => {
+        if (x+6+ox < x+w-20) { g.fillStyle(0x90c8d8); g.fillRect(x+14+ox, y+28, 30, 18); g.lineStyle(1,0x4888a8); g.strokeRect(x+14+ox, y+28, 30, 18); }
+      });
+      // Queue barriers
+      [[cx-80,cy+20],[cx,cy+20],[cx+80,cy+20]].forEach(([bx,by]) => {
+        g.fillStyle(0xd0a830); g.fillRect(bx-2, by-30, 4, 60);
+        g.fillStyle(0xf0c040); g.fillRect(bx-8, by-32, 16, 6);
+      });
+    } else if (id === 'ward') {
+      // Hospital beds
+      [[x+16,y+48],[x+16,y+178],[x+16,y+308]].forEach(([bx,by]) => {
+        g.fillStyle(0xeef6ff); g.fillRect(bx,by,185,90);
+        g.fillStyle(0xd0e8f8); g.fillRect(bx+4,by+8,36,26);
+        g.lineStyle(2,0x80b0d0); g.strokeRect(bx,by,185,90);
+        // IV stand
+        g.fillStyle(0xd0e030); g.fillRect(bx+188,by+18,4,50); g.fillCircle(bx+190,by+18,6);
+      });
+    } else if (id === 'wait') {
+      // Waiting room chairs in rows
+      [[x+18,y+60],[x+108,y+60],[x+18,y+160],[x+108,y+160],[x+18,y+260],[x+108,y+260]].forEach(([bx,by]) => {
+        g.fillStyle(0x7090c0); g.fillRect(bx,by,70,36);
+        g.fillStyle(0x8898b0); g.fillRect(bx+2,by-8,70,10);
+        g.lineStyle(1,0x5070a0); g.strokeRect(bx,by,70,36);
+      });
+    } else if (id === 'flor') {
+      // Treadmills
+      [[x+28,y+56],[x+28,y+196],[x+178,y+56],[x+178,y+196]].forEach(([bx,by]) => {
+        g.fillStyle(0x484038); g.fillRect(bx,by,82,42);
+        g.fillStyle(0x686050); g.fillRect(bx+10,by+6,62,26);
+        g.lineStyle(2,0x302820); g.strokeRect(bx,by,82,42);
+      });
+      // Weights rack
+      g.fillStyle(0x303030); g.fillRect(x+330,y+46,12,155);
+      [0,1,2,3,4].forEach(i => { g.fillStyle(0x585858); g.fillEllipse(x+336,y+68+i*28,24,14); });
+    } else if (id === 'lckr') {
+      // Locker row
+      for (let i=0;i<5;i++) {
+        g.fillStyle(0x7090a0); g.fillRect(x+12+i*48,y+32,40,80);
+        g.fillStyle(0x90b0c0); g.fillRect(x+14+i*48,y+34,36,36);
+        g.fillStyle(0xc8e0f0); g.fillRect(x+16+i*48,y+36,32,32);
+        g.fillStyle(0xe0e0d0); g.fillCircle(x+34+i*48,y+76,5);
+        g.lineStyle(1,0x508090); g.strokeRect(x+12+i*48,y+32,40,80);
+      }
+    } else if (id === 'plat') {
+      // BTS platform
+      g.fillStyle(0xd0c8b8); g.fillRect(x+8, cy-12, w-16, 24);
+      g.fillStyle(0xf0e030); g.fillRect(x+8, cy-14, w-16, 5);
+      // Benches
+      [[x+60,cy-60],[x+320,cy-60],[x+580,cy-60]].forEach(([bx,by]) => {
+        g.fillStyle(0xb0a880); g.fillRect(bx,by,78,18);
+        g.lineStyle(1,0x807858); g.strokeRect(bx,by,78,18);
+      });
+    } else if (id === 'stor') {
+      // Shelves
+      [[y+52],[y+162],[y+272]].forEach(([by]) => {
+        g.fillStyle(0xc8c0a0); g.fillRect(x+12,by,w-24,24);
+        g.lineStyle(1,0xa0a080); g.strokeRect(x+12,by,w-24,24);
+        for (let i=0;i<8;i++) { g.fillStyle(0x608040+(i*0x100810)); g.fillRect(x+18+i*Math.floor((w-36)/8),by+4,Math.floor((w-36)/8)-4,14); }
+      });
+      g.fillStyle(0xe0d8b0); g.fillRect(x+w-80,y+40,70,h-80);
+      g.lineStyle(2,0xb0a870); g.strokeRect(x+w-80,y+40,70,h-80);
+    } else if (id === 'pump') {
+      // Gas pumps
+      [[cx-120,cy],[cx-40,cy],[cx+40,cy],[cx+120,cy]].forEach(([bx,by]) => {
+        g.fillStyle(0xe8d030); g.fillRect(bx-14,by-40,28,55);
+        g.fillStyle(0xf0f0f0); g.fillRect(bx-10,by-36,20,20);
+        g.fillStyle(0xff6020); g.fillRect(bx-10,by-12,20,10);
+        g.lineStyle(2,0xa09020); g.strokeRect(bx-14,by-40,28,55);
+      });
+    } else {
+      // Generic: scattered seating
+      [[cx-75,cy-28],[cx+20,cy-28],[cx-30,cy+45]].forEach(([bx,by]) => {
+        g.fillStyle(0xd0b870); g.fillEllipse(bx,by,56,44);
+        g.lineStyle(1,0xa08840); g.strokeEllipse(bx,by,56,44);
+      });
+    }
+  }
+
+  _spawnChars(layout) {
+    const margin = 30;
+    const roomCounts = {};
+    for (const ch of this._charData) {
+      const act = (ch.activity || '').toLowerCase();
+      const loc = (ch.locStr   || '').toLowerCase();
+      let room = layout.rooms.find(r => r.kw && r.kw.some(k => act.includes(k) || loc.includes(k)));
+      if (!room) room = layout.rooms.find(r => r.def) || layout.rooms[0];
+      const rid = room.id;
+      roomCounts[rid] = (roomCounts[rid] || 0) + 1;
+      const idx = roomCounts[rid] - 1;
+      const cols = 3;
+      const cellW = (room.w - margin * 2) / cols;
+      const rows  = Math.max(1, Math.ceil(this._charData.length / cols));
+      const cellH = (room.h - margin * 2 - 10) / rows;
+      const px = room.x + margin + (idx % cols) * cellW + cellW * (0.25 + Math.random() * 0.5);
+      const py = room.y + margin + (Math.floor(idx / cols) % rows) * cellH + cellH * (0.25 + Math.random() * 0.5);
+
+      const ci = ch.colorIdx ?? 0;
+      const gd = ch.gender === 'female' ? 'f' : 'm';
+      const isPet = ch.character_type === 'pet';
+      const spr = this.add.image(px, py, isPet ? `pet_${ci}_r` : `char_${ci}_r_${gd}`)
+        .setOrigin(0.5, 0.95).setScale(2).setDepth(100 + py);
+      const nlbl = this.add.text(px, py - 28, ch.nickname || ch.name.split(' ')[0], {
+        fontFamily:'monospace', fontSize:'8px', color:'#f8e898',
+        stroke:'#1a0a04', strokeThickness:3, resolution:2,
+      }).setOrigin(0.5, 1).setDepth(102 + py);
+      const albl = ch.activity ? this.add.text(px, py - 15, ch.activity.substring(0, 24), {
+        fontFamily:'monospace', fontSize:'7px', color:'#d0c8a8',
+        stroke:'#1a0a04', strokeThickness:2, resolution:2,
+      }).setOrigin(0.5, 1).setDepth(102 + py) : null;
+
+      const walker = { spr, nlbl, albl, px, py, tx:px, ty:py, room, ci, gd, isPet, facingRight:true, waitTimer:Math.random()*80 };
+      this._walkers.push(walker);
+      this._pickTarget(walker);
+    }
+  }
+
+  _pickTarget(w) {
+    const m = 30;
+    const r = w.room;
+    w.tx = r.x + m + Math.random() * (r.w - m * 2);
+    w.ty = r.y + m + Math.random() * (r.h - m * 2 - 10);
+    w.waitTimer = 80 + Math.random() * 220;
+  }
+
+  _drawHeader(title) {
+    const hg = this.add.graphics().setDepth(900);
+    hg.fillStyle(0x1a0e06, 0.94); hg.fillRect(0, 0, 800, 42);
+    hg.lineStyle(2, 0xd8a840); hg.lineBetween(0, 42, 800, 42);
+
+    this.add.text(400, 21, title, {
+      fontFamily:'monospace', fontSize:'13px', color:'#f8e898',
+      stroke:'#1a0a04', strokeThickness:3, resolution:2,
+    }).setOrigin(0.5, 0.5).setDepth(910);
+
+    const back = this.add.text(14, 21, '← กลับ', {
+      fontFamily:'monospace', fontSize:'11px', color:'#f0c040',
+      stroke:'#1a0a04', strokeThickness:3, resolution:2,
+    }).setOrigin(0, 0.5).setDepth(910)
+      .setInteractive({ useHandCursor:true })
+      .on('pointerover', () => back.setStyle({ color:'#ffffff' }))
+      .on('pointerout',  () => back.setStyle({ color:'#f0c040' }))
+      .on('pointerup',   () => {
+        this.scene.stop();
+        this.scene.wake('IsoScene');
+        const iso = this.scene.get('IsoScene');
+        if (iso) _rs._scene = iso;
+      });
+  }
+
+  update(time, delta) {
+    const LERP = 0.036;
+    for (const w of this._walkers) {
+      if (w.waitTimer > 0) {
+        w.waitTimer -= delta / 16;
+        if (w.waitTimer <= 0) this._pickTarget(w);
+        continue;
+      }
+      const dx = w.tx - w.px, dy = w.ty - w.py;
+      if (Math.hypot(dx, dy) < 5) { w.waitTimer = 80 + Math.random() * 220; continue; }
+      if (Math.abs(dx) > 1) w.facingRight = dx > 0;
+      w.px += dx * LERP; w.py += dy * LERP;
+      if (w.isPet) {
+        w.spr.setTexture(`pet_${w.ci}_${w.facingRight?'r':'l'}`);
+      } else {
+        w.spr.setTexture(`char_${w.ci}_${w.facingRight?'r':'l'}_${w.gd}`);
+      }
+      w.spr.setPosition(w.px, w.py).setDepth(100 + w.py);
+      w.nlbl.setPosition(w.px, w.py - 28).setDepth(102 + w.py);
+      if (w.albl) w.albl.setPosition(w.px, w.py - 15).setDepth(102 + w.py);
+    }
+  }
+}
+
 // ─── Public renderer API (same interface as before) ───────────────────────────
 const renderer = {
   _game: null,
@@ -1133,7 +1533,7 @@ const renderer = {
       width:           800,
       height:          450,
       backgroundColor: '#3878c8',
-      scene:           IsoScene,
+      scene:           [IsoScene, IndoorScene],
       pixelArt:        true,
       roundPixels:     true,
       antialias:       false,
@@ -1174,6 +1574,14 @@ const renderer = {
   showSpeechBubble(text) {
     const el = document.getElementById('speech-bubble');
     if (el) { el.textContent=text; el.classList.remove('hidden'); clearTimeout(this._bt); this._bt=setTimeout(()=>el.classList.add('hidden'),5000); }
+  },
+
+  showIndoor(building, chars) {
+    if (!this._game) return;
+    this._game.scene.sleep('IsoScene');
+    // Stop any running IndoorScene then start fresh with new building data
+    try { this._game.scene.stop('IndoorScene'); } catch(_) {}
+    this._game.scene.start('IndoorScene', { building, chars });
   },
 
   onBuildingClick:  null,

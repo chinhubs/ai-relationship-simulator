@@ -1,10 +1,18 @@
 # AI Relationship Simulator
 
-> **v1.6.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
+> **v1.7.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
 
 A web-based simulation platform where you create psychologically-accurate AI personas, run them through a daily life simulation, and observe how they feel, decide, and form relationships over time — all inside a living, animated pixel art world.
 
 ---
+
+## What's New in v1.7.0
+
+- **Real Indoor Phaser Scene** — clicking a building label now launches a full `IndoorScene` (a second Phaser scene) instead of an HTML popup; the outdoor city sleeps, the indoor view wakes with pixel art rooms, drawn furniture, and your characters as walking sprites
+- **Room Layouts for 13 Building Types** — each building type (house, office, cafe, restaurant, mall, hospital, bank, gym, park, BTS, store, gas) has a dedicated floor plan with type-appropriate rooms (bedroom/bathroom/kitchen/living room for houses; workstations + conference room for office; etc.)
+- **Pixel Art Furniture** — each room is furnished with hand-drawn shapes: beds, sofas, TVs, kitchen counters with stove burners, conference tables, treadmills, locker rows, hospital beds, gas pumps, shelves, and more
+- **Characters Walk Around Inside** — sprites are placed in their keyword-matched room and smoothly wander to random targets within room bounds; they face left/right as they move; name + current activity labels float above each character
+- **← กลับ Button** — returns to the outdoor isometric city; IsoScene wakes and resumes exactly where it left off
 
 ## What's New in v1.6.0
 
@@ -186,6 +194,12 @@ ai-relationship-simulator/
 ---
 
 ## Changelog
+
+### v1.7.0 — Real Indoor Phaser Scene
+- `IndoorScene` Phaser scene: clicking a building transitions from the outdoor `IsoScene` (sleeps) to a fully rendered indoor top-down view
+- 13 building type floor plans: dedicated room layouts with pixel art furniture drawn via Phaser Graphics
+- Character sprites wander within their keyword-matched room; name + activity labels update in real time
+- `← กลับ` button returns to the outdoor scene seamlessly via `scene.stop()` / `scene.wake()`
 
 ### v1.6.0 — Depth Fix + Camera Controls + Profile Save + NPC Routing + Pet Schedules
 - Isometric depth formula unified for characters, NPCs, and buildings — no more rooftop floating

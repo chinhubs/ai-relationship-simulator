@@ -56,7 +56,7 @@ const app = {
 
     // Renderer interactive callbacks
     renderer.onBuildingClick = (building, chars) => {
-      ui.showLocationDetail(building, chars);
+      renderer.showIndoor(building, chars);
     };
     renderer.onCharacterClick = (charId) => {
       ui.selectCharacter(charId, app.characters || []);
