@@ -132,7 +132,16 @@ const INIT_CARS = [
   {t:0.75,dir:-1,axis:"v",ci:4},{t:0.45,dir:1, axis:"h",ci:5},
 ];
 
-// ─── Pet sprite palette ───────────────────────────────────────────────────────
+// ─── Character / Pet sprite palettes ─────────────────────────────────────────
+const CHAR_PALETTE = [
+  { shirt:0x3888e8,pants:0x283860,hair:0x100808 },
+  { shirt:0xe85890,pants:0x382850,hair:0x181008 },
+  { shirt:0x38a860,pants:0x182838,hair:0x7a3810 },
+  { shirt:0xd8b820,pants:0x383018,hair:0x080810 },
+  { shirt:0xc03838,pants:0x381818,hair:0x180408 },
+  { shirt:0x8058d0,pants:0x281838,hair:0x080808 },
+];
+
 const PET_PALETTE = [
   { body:0xd09050, dark:0x805028, eye:0x20c030 }, // orange tabby
   { body:0x303030, dark:0x181818, eye:0xf0d820 }, // black
@@ -148,8 +157,72 @@ function lighten(hex, amt)  {
   return (r<<16)|(g<<8)|b;
 }
 function darken(hex, amt) { return lighten(hex, -amt); }
+function _parseColor(s) {
+  if (typeof s === 'number') return s;
+  if (typeof s === 'string' && s.startsWith('#')) return parseInt(s.slice(1), 16);
+  return null;
+}
 function hexToRgba(hex, a) {
   return `rgba(${(hex>>16)&0xff},${(hex>>8)&0xff},${hex&0xff},${a})`;
+}
+
+// ─── Shared camera: wheel zoom + drag pan + pinch-to-zoom (desktop & mobile) ──
+function _bindCameraControls(scene, minZ, maxZ, zoomFactor) {
+  scene._dragPan = null;
+  scene._didDrag = false;
+  scene._lastTap = 0;
+  scene._pinchDist = null;
+  scene.input.addPointer(1); // ensure pointer2 slot for pinch gesture
+
+  scene.input.on('wheel', (_ptr, _objs, _dx, dy) => {
+    const cam = scene.cameras.main;
+    cam.zoom = Phaser.Math.Clamp(cam.zoom - dy * zoomFactor, minZ, maxZ);
+  });
+
+  scene.input.on('pointerdown', (ptr) => {
+    const p2 = scene.input.pointer2;
+    if (p2 && p2.isDown) {
+      scene._pinchDist = Math.hypot(scene.input.pointer1.x - p2.x, scene.input.pointer1.y - p2.y);
+      scene._dragPan = null;
+      return;
+    }
+    const now = Date.now();
+    if (now - scene._lastTap < 280 && !scene._didDrag) {
+      scene.cameras.main.zoom = 1; scene.cameras.main.setScroll(0, 0);
+    }
+    scene._dragPan = { sx: scene.cameras.main.scrollX, sy: scene.cameras.main.scrollY, px: ptr.x, py: ptr.y };
+    scene._didDrag = false;
+  });
+
+  scene.input.on('pointermove', (ptr) => {
+    const p2 = scene.input.pointer2;
+    if (p2 && p2.isDown && scene.input.pointer1.isDown) {
+      const dist = Math.hypot(scene.input.pointer1.x - p2.x, scene.input.pointer1.y - p2.y);
+      if (scene._pinchDist !== null) {
+        const cam = scene.cameras.main;
+        cam.zoom = Phaser.Math.Clamp(cam.zoom + (dist - scene._pinchDist) * 0.006, minZ, maxZ);
+      }
+      scene._pinchDist = dist;
+      return;
+    }
+    scene._pinchDist = null;
+    if (!scene._dragPan || !ptr.isDown) return;
+    const dx = ptr.x - scene._dragPan.px, dy = ptr.y - scene._dragPan.py;
+    if (Math.hypot(dx, dy) > 8 || scene._didDrag) {
+      scene._didDrag = true;
+      const cam = scene.cameras.main;
+      cam.scrollX = scene._dragPan.sx - dx / cam.zoom;
+      cam.scrollY = scene._dragPan.sy - dy / cam.zoom;
+    }
+  });
+
+  scene.input.on('pointerup', () => {
+    const wasPinching = scene._pinchDist !== null;
+    scene._pinchDist = null;
+    scene._dragPan = null;
+    if (!scene._didDrag && !wasPinching) scene._lastTap = Date.now();
+    scene.time.delayedCall(50, () => { scene._didDrag = false; });
+  });
 }
 
 // ─── Main Phaser Scene ────────────────────────────────────────────────────────
@@ -184,35 +257,8 @@ class IsoScene extends Phaser.Scene {
 
     _rs._scene = this;
 
-    // Camera: mouse wheel zoom, drag to pan, double-click to reset
-    this._dragPan = null; this._didDrag = false; this._lastTap = 0;
-    this.input.on('wheel', (_ptr, _objs, _dx, dy) => {
-      const cam = this.cameras.main;
-      cam.zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.0007, 0.75, 2.5);
-    });
-    this.input.on('pointerdown', (ptr) => {
-      const now = Date.now();
-      if (now - this._lastTap < 280 && !this._didDrag) {
-        this.cameras.main.zoom = 1; this.cameras.main.setScroll(0, 0);
-      }
-      this._dragPan = { sx: this.cameras.main.scrollX, sy: this.cameras.main.scrollY, px: ptr.x, py: ptr.y };
-      this._didDrag = false;
-    });
-    this.input.on('pointermove', (ptr) => {
-      if (!this._dragPan || !ptr.isDown) return;
-      const dx = ptr.x - this._dragPan.px, dy = ptr.y - this._dragPan.py;
-      if (Math.hypot(dx, dy) > 8 || this._didDrag) {
-        this._didDrag = true;
-        const cam = this.cameras.main;
-        cam.scrollX = this._dragPan.sx - dx / cam.zoom;
-        cam.scrollY = this._dragPan.sy - dy / cam.zoom;
-      }
-    });
-    this.input.on('pointerup', () => {
-      if (!this._didDrag) this._lastTap = Date.now();
-      this._dragPan = null;
-      this.time.delayedCall(50, () => { this._didDrag = false; });
-    });
+    // Camera: wheel zoom + drag pan + pinch-to-zoom (mobile)
+    _bindCameraControls(this, 0.75, 2.5, 0.0007);
 
     // Chars may have been set before Phaser finished loading
     if (_rs.chars.length > 0) this.updateChars(_rs.chars);
@@ -289,18 +335,10 @@ class IsoScene extends Phaser.Scene {
 
   // ── Character + NPC sprite textures (16×24 each, 4 variants) ──────────────
   _makeCharTextures() {
-    const PALETTE = [
-      { shirt:0x3888e8,pants:0x283860,hair:0x100808 },
-      { shirt:0xe85890,pants:0x382850,hair:0x181008 },
-      { shirt:0x38a860,pants:0x182838,hair:0x7a3810 },
-      { shirt:0xd8b820,pants:0x383018,hair:0x080810 },
-      { shirt:0xc03838,pants:0x381818,hair:0x180408 },
-      { shirt:0x8058d0,pants:0x281838,hair:0x080808 },
-    ];
     for (let ci = 0; ci < 6; ci++) {
       for (const dir of ['l','r']) {
         for (const gender of ['m','f']) {
-          const { shirt, pants, hair } = PALETTE[ci];
+          const { shirt, pants, hair } = CHAR_PALETTE[ci];
           this._genSprite(`char_${ci}_${dir}_${gender}`, shirt, pants, hair, dir==='r', gender==='f');
         }
       }
@@ -319,7 +357,35 @@ class IsoScene extends Phaser.Scene {
     }
   }
 
-  _genSprite(key, shirt, pants, hair, right, female) {
+  _ensureCharTextures(chars) {
+    for (let i = 0; i < chars.length; i++) {
+      const ch = chars[i];
+      const ci = ch.colorIdx ?? (i % 6);
+      const app = ch.profile_extra?.appearance || {};
+      const isPet = ch.character_type === 'pet';
+      if (isPet) {
+        const pal  = PET_PALETTE[ci % 6];
+        const body = _parseColor(app.body_color) ?? pal.body;
+        const dark = _parseColor(app.dark_color)  ?? darken(body, 40);
+        const eye  = _parseColor(app.eye_color)   ?? pal.eye;
+        this._genPetSprite(`pet_${ch.id}_r`, body, dark, eye, true);
+        this._genPetSprite(`pet_${ch.id}_l`, body, dark, eye, false);
+      } else {
+        const pal      = CHAR_PALETTE[ci % 6];
+        const shirt    = _parseColor(app.shirt)      ?? pal.shirt;
+        const pants    = _parseColor(app.pants)      ?? pal.pants;
+        const hairCol  = _parseColor(app.hair_color) ?? pal.hair;
+        const hairStyle = app.hair_style || null;
+        for (const dir of ['r', 'l']) {
+          for (const gender of ['m', 'f']) {
+            this._genSprite(`char_${ch.id}_${dir}_${gender}`, shirt, pants, hairCol, dir==='r', gender==='f', hairStyle);
+          }
+        }
+      }
+    }
+  }
+
+  _genSprite(key, shirt, pants, hair, right, female, hairStyle) {
     const W=16, H=24;
     const g = this.make.graphics({x:0,y:0,add:false});
     const skin = 0xe8b870;
@@ -348,7 +414,9 @@ class IsoScene extends Phaser.Scene {
     g.fillStyle(skin); g.fillRect(right?5:7,H-18,2,1); g.fillRect(right?4:6,H-23,6,5);
     // Hair
     g.fillStyle(hair); g.fillRect(right?3:5,H-24,8,2);
-    if (female) { g.fillRect(right?3:5,H-23,2,4); g.fillRect(right?9:11,H-23,2,4); }
+    const _hs = hairStyle || (female ? 'long' : 'short');
+    if (_hs === 'long') { g.fillRect(right?3:5,H-23,2,5); g.fillRect(right?9:11,H-23,2,5); }
+    else if (_hs === 'bun') { g.fillRect(right?5:7,H-26,4,2); g.fillRect(right?6:8,H-27,2,1); }
     // Eyes
     g.fillStyle(0x080404);
     if (right) { g.fillRect(7,H-21,1,1); g.fillRect(9,H-21,1,1); }
@@ -834,13 +902,14 @@ class IsoScene extends Phaser.Scene {
     const startX = isoX(entry.c, entry.r);
     const startY = isoY(entry.c, entry.r);
 
+    this._ensureCharTextures(chars);
     for (let i = 0; i < chars.length; i++) {
       const ch = chars[i];
       if (!this._charObjs.has(ch.id)) {
         const ci = ch.colorIdx ?? (i % 6);
         const g  = ch.gender==='female' ? 'f' : 'm';
         const isPet = ch.character_type === 'pet';
-        const texKey = isPet ? `pet_${ci}_r` : `char_${ci}_r_${g}`;
+        const texKey = isPet ? `pet_${ch.id}_r` : `char_${ch.id}_r_${g}`;
         const spr= this.add.image(startX + i*10, startY, texKey).setOrigin(0.5, 0.95);
         spr.setDepth(Math.round((startY - OY) * 2000 / TH) + 200);
         spr.setInteractive({ useHandCursor: true })
@@ -924,10 +993,10 @@ class IsoScene extends Phaser.Scene {
       const ch = _rs.chars.find(c=>c.id===id);
       const isPet = ch?.character_type === 'pet';
       if (isPet) {
-        obj.sprite.setTexture(`pet_${obj.ci}_${obj.facingRight?'r':'l'}`);
+        obj.sprite.setTexture(`pet_${id}_${obj.facingRight?'r':'l'}`);
       } else {
         const g = (ch?.gender==='female')?'f':'m';
-        obj.sprite.setTexture(`char_${obj.ci}_${obj.facingRight?'r':'l'}_${g}`);
+        obj.sprite.setTexture(`char_${id}_${obj.facingRight?'r':'l'}_${g}`);
       }
       // Smooth fade: invisible when fully indoors, visible when outdoors
       const targetAlpha = (obj.isIndoor || obj.isOnCar) ? 0 : 1;
@@ -1330,35 +1399,8 @@ class IndoorScene extends Phaser.Scene {
     this._spawnChars(layout);
     this._drawHeader(layout.title);
 
-    // ── Zoom & Pan (same pattern as IsoScene) ──────────────────────────────
-    this._dragPan = null; this._didDrag = false; this._lastTap = 0;
-    this.input.on('wheel', (_ptr, _objs, _dx, dy) => {
-      const cam = this.cameras.main;
-      cam.zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.001, 0.4, 3.0);
-    });
-    this.input.on('pointerdown', (ptr) => {
-      const now = Date.now();
-      if (now - this._lastTap < 280 && !this._didDrag) {
-        this.cameras.main.zoom = 1; this.cameras.main.setScroll(0, 0);
-      }
-      this._dragPan = { sx: this.cameras.main.scrollX, sy: this.cameras.main.scrollY, px: ptr.x, py: ptr.y };
-      this._didDrag = false;
-    });
-    this.input.on('pointermove', (ptr) => {
-      if (!this._dragPan || !ptr.isDown) return;
-      const dx = ptr.x - this._dragPan.px, dy = ptr.y - this._dragPan.py;
-      if (Math.hypot(dx, dy) > 8 || this._didDrag) {
-        this._didDrag = true;
-        const cam = this.cameras.main;
-        cam.scrollX = this._dragPan.sx - dx / cam.zoom;
-        cam.scrollY = this._dragPan.sy - dy / cam.zoom;
-      }
-    });
-    this.input.on('pointerup', () => {
-      if (!this._didDrag) this._lastTap = Date.now();
-      this._dragPan = null;
-      this.time.delayedCall(50, () => { this._didDrag = false; });
-    });
+    // ── Zoom & Pan + pinch-to-zoom (mobile) ───────────────────────────────
+    _bindCameraControls(this, 0.4, 3.0, 0.001);
   }
 
   _drawRoom(room) {
@@ -1614,10 +1656,9 @@ class IndoorScene extends Phaser.Scene {
       const px = room.x + margin + (idx % cols) * cellW + cellW * (0.25 + Math.random() * 0.5);
       const py = room.y + margin + (Math.floor(idx / cols) % rows) * cellH + cellH * (0.25 + Math.random() * 0.5);
 
-      const ci = ch.colorIdx ?? 0;
       const gd = ch.gender === 'female' ? 'f' : 'm';
       const isPet = ch.character_type === 'pet';
-      const spr = this.add.image(px, py, isPet ? `pet_${ci}_r` : `char_${ci}_r_${gd}`)
+      const spr = this.add.image(px, py, isPet ? `pet_${ch.id}_r` : `char_${ch.id}_r_${gd}`)
         .setOrigin(0.5, 0.95).setScale(2).setDepth(100 + py);
       const _ia = ch.avatar_emoji || (ch.character_type === 'pet' ? '🐾' : '👤');
       const _in = ch.nickname || ch.name.split(' ')[0];
@@ -1627,14 +1668,7 @@ class IndoorScene extends Phaser.Scene {
         backgroundColor:'#1a100aaa', padding:{x:5,y:3},
         resolution:2,
       }).setOrigin(0.5, 1).setDepth(102 + py);
-      const albl = ch.activity ? this.add.text(px, py - 44, ch.activity.substring(0, 28), {
-        fontFamily:'monospace', fontSize:'8px', color:'#c8d8f8',
-        stroke:'#0a0a14', strokeThickness:3,
-        backgroundColor:'#0a0a2888', padding:{x:4,y:2},
-        resolution:2,
-      }).setOrigin(0.5, 1).setDepth(102 + py) : null;
-
-      const walker = { spr, nlbl, albl, px, py, tx:px, ty:py, room, ci, gd, isPet, facingRight:true, waitTimer: Math.random() * 20 };
+      const walker = { spr, nlbl, px, py, tx:px, ty:py, room, id: ch.id, gd, isPet, facingRight:true, waitTimer: Math.random() * 20 };
       this._walkers.push(walker);
       this._pickTarget(walker);  // sets initial tx/ty only
     }
@@ -1692,15 +1726,14 @@ class IndoorScene extends Phaser.Scene {
       if (Math.abs(dx) > 1) w.facingRight = dx > 0;
       w.px += dx * LERP; w.py += dy * LERP;
       if (w.isPet) {
-        w.spr.setTexture(`pet_${w.ci}_${w.facingRight?'r':'l'}`);
+        w.spr.setTexture(`pet_${w.id ?? w.ci}_${w.facingRight?'r':'l'}`);
       } else if (w.isNpc) {
         w.spr.setTexture(`npc_${w.ci}_${w.facingRight?'r':'l'}`);
       } else {
-        w.spr.setTexture(`char_${w.ci}_${w.facingRight?'r':'l'}_${w.gd}`);
+        w.spr.setTexture(`char_${w.id ?? w.ci}_${w.facingRight?'r':'l'}_${w.gd}`);
       }
       w.spr.setPosition(w.px, w.py).setDepth(100 + w.py);
       w.nlbl.setPosition(w.px, w.py - 56).setDepth(102 + w.py);
-      if (w.albl) w.albl.setPosition(w.px, w.py - 44).setDepth(102 + w.py);
     }
   }
 }
@@ -1722,6 +1755,7 @@ const renderer = {
       roundPixels:     true,
       antialias:       false,
       banner:          false,
+      input:           { activePointers: 2 },
     });
   },
 

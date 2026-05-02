@@ -1,20 +1,18 @@
 # AI Relationship Simulator
 
-> **v1.8.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
+> **v2.0.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
 
 A web-based simulation platform where you create psychologically-accurate AI personas, run them through a daily life simulation, and observe how they feel, decide, and form relationships over time — all inside a living, animated pixel art world.
 
 ---
 
-## What's New in v1.8.0
+## What's New in v2.0.0
 
-- **Emotion Icons Always Visible** — every outdoor character now displays a floating emotion icon at all times (😊 😰 💕 😔 😠 🥱 …); thresholds lowered and a fallback cascade ensures no character is ever icon-less; icons have a dark semi-transparent background pill for legibility against any scene
-- **Improved Character Name Labels** — labels now show the character's avatar emoji + name (`😊 แอน`); larger 11 px font, pill background, heavier stroke; positioned well above the sprite head for clear separation
-- **Correct Indoor Label Positions** — indoor scene characters render sprites at 2× scale (48 px tall); name and activity labels were overlapping the sprite body; both labels are now placed above the sprite head (`−56 px` / `−44 px`)
-- **Ambient NPC Labels Fixed** — indoor ambient NPCs (staff, customers, patients…) also had the same 2× overlap bug; now fixed with matching pill-style labels
-- **Speech Bubble Text Larger** — bubble message text increased from 7 px to 9 px for readability
-- **Occupation-Aware Work Locations** — `personalise_work_slot()` maps each character's `occupation` + `work_details` to their actual workplace: WFH/freelancers work from home (occasional office visit), beauty-clinic doctors go to the mall, hospital staff go to the hospital, baristas to the café, chefs to the restaurant, teachers to school, etc.
-- **Stable WFH Decisions** — a day+id seeded RNG ensures a character who works from home on a given day stays home for all ticks of that day
+- **Character Appearance Customization** — each character now has a visual appearance picker in the create/edit form: choose shirt color (12 options), pants color (8 options), hair color (10 options), and hair style (สั้น / ยาว / มวยผม) for human characters; coat color (8 options) and eye color (6 options) for pets; selections are saved in `profile_extra.appearance` and rendered as unique per-character pixel art sprites in both the outdoor city and indoor scenes
+- **Per-Character Textures** — characters are no longer assigned a color index from a 6-slot palette; instead Phaser generates an individual texture for each character id using their saved appearance colors, with palette fallback for characters with no appearance set
+- **Hair Style Sprites** — `_genSprite` now supports three distinct hair shapes: short (top band only), long (side strands, suitable for all genders), and bun (top knot pixel shape)
+- **Mobile Pinch-to-Zoom** — both the outdoor city (`IsoScene`) and indoor building view (`IndoorScene`) now respond to two-finger pinch gestures on iOS and Android; `input.activePointers: 2` is set in the Phaser game config and `touch-action: none` is applied to the canvas so the browser does not intercept scroll events
+- **Cleaner Indoor View** — removed permanent activity text labels above indoor characters; only the name tag (avatar emoji + name) stays; timed emotion bursts and speech bubbles still appear and disappear normally
 
 ## What's New in v1.7.0
 
@@ -204,6 +202,20 @@ ai-relationship-simulator/
 ---
 
 ## Changelog
+
+### v2.0.0 — Character Appearance Customization + Mobile Pinch-to-Zoom
+- **Character Appearance Customization** — create/edit form now includes a visual swatch picker: shirt color (12 options), pants color (8 options), hair color (10 options), hair style (สั้น/ยาว/มวยผม) for human characters; coat color (8 options) and eye color (6 options) for pets; saved in `profile_extra.appearance`
+- **Per-Character Textures** — each character gets a unique Phaser texture (`char_{id}_r/l_m/f`, `pet_{id}_r/l`) generated from their saved appearance colors instead of a shared 6-slot palette index; palette fallback for characters with no appearance set
+- **Hair Style Sprites** — `_genSprite` supports three distinct hair shapes: `short` (top band only), `long` (side strands), `bun` (top knot pixel shape)
+- **Mobile Pinch-to-Zoom** — both `IsoScene` and `IndoorScene` respond to two-finger pinch gestures on iOS/Android; `input.activePointers: 2` in Phaser config + `touch-action: none` on canvas prevents browser scroll interception
+- **Cleaner Indoor View** — removed permanent activity text labels floating above indoor characters; only the name tag (avatar emoji + name) remains; timed emotion bursts and speech bubbles still appear and auto-dismiss
+
+### v1.9.0 — Hamburger Menu + Dark Amber Theme + Indoor Camera + Burst Emotions
+- Hamburger menu (`btn-hamburger`) collapses side panels into a slide-out drawer on narrow screens
+- Dark amber pixel art theme (`--accent: #d4a843`, `--accent-2: #f0c060`) applied globally via CSS variables
+- Indoor scene mouse-wheel zoom (0.4×–3.0×) and drag pan
+- Building label filter uses exact-match before falling back to substring, preventing wrong building selection
+- Emotion burst system: short-duration emotion icons (`burst_${id}`) fly up from characters then auto-destroy; replaces the previous always-on overlay approach
 
 ### v1.8.0 — Emotion Overlays, Label Polish & Occupation-Aware Locations
 - Emotion icons now always display above outdoor characters — lowered thresholds, full fallback cascade, dark pill background for visibility

@@ -220,6 +220,45 @@ const BUILDING_INTERIORS = {
   },
 };
 
+// ─── Appearance color palettes ────────────────────────────────────────────────
+const SHIRT_COLORS = [
+  { hex:'#3888e8',label:'ฟ้า' },    { hex:'#e85890',label:'ชมพู' },
+  { hex:'#38a860',label:'เขียว' },  { hex:'#d8b820',label:'เหลือง' },
+  { hex:'#c03838',label:'แดง' },    { hex:'#8058d0',label:'ม่วง' },
+  { hex:'#e87828',label:'ส้ม' },    { hex:'#28a8b0',label:'เขียวฟ้า' },
+  { hex:'#f0f0e8',label:'ขาว' },    { hex:'#808080',label:'เทา' },
+  { hex:'#a86838',label:'น้ำตาล' }, { hex:'#303030',label:'ดำ' },
+];
+const PANTS_COLORS = [
+  { hex:'#283860',label:'กรมท่า' }, { hex:'#383838',label:'เทาเข้ม' },
+  { hex:'#181818',label:'ดำ' },     { hex:'#382010',label:'น้ำตาล' },
+  { hex:'#182838',label:'เขียวเข้ม'},{ hex:'#887848',label:'กากี' },
+  { hex:'#e8e8e0',label:'ขาว' },    { hex:'#585858',label:'เทา' },
+];
+const HAIR_COLORS = [
+  { hex:'#100808',label:'ดำ' },      { hex:'#201008',label:'น้ำตาลเข้ม' },
+  { hex:'#7a3810',label:'น้ำตาล' },  { hex:'#a85028',label:'น้ำตาลอ่อน' },
+  { hex:'#c8a028',label:'บลอนด์' },  { hex:'#a02010',label:'แดง' },
+  { hex:'#d05010',label:'ส้ม' },     { hex:'#d060a0',label:'ชมพู' },
+  { hex:'#f0e8e8',label:'ขาว' },     { hex:'#888880',label:'เทา' },
+];
+const HAIR_STYLES = [
+  { key:'short',label:'สั้น' },
+  { key:'long', label:'ยาว' },
+  { key:'bun',  label:'มวยผม' },
+];
+const PET_BODY_COLORS = [
+  { hex:'#d09050',label:'ส้ม' },    { hex:'#303030',label:'ดำ' },
+  { hex:'#e0d8c8',label:'ครีม' },   { hex:'#808070',label:'เทา' },
+  { hex:'#a07040',label:'น้ำตาล' }, { hex:'#d0c088',label:'ทอง' },
+  { hex:'#d04018',label:'แดงส้ม' }, { hex:'#f0ece0',label:'ขาว' },
+];
+const PET_EYE_COLORS = [
+  { hex:'#20c030',label:'เขียว' },  { hex:'#f0d820',label:'เหลือง' },
+  { hex:'#20a8d8',label:'ฟ้า' },    { hex:'#d0a020',label:'อำพัน' },
+  { hex:'#38b828',label:'เขียวสด' },{ hex:'#d86010',label:'ส้ม' },
+];
+
 const ui = {
   _dailyLog: [],
   _activeCharFilter: null,
@@ -669,6 +708,7 @@ const ui = {
       </form>
     `);
     this._setupCharTypeForm("e");
+    this._initAppearancePicker("e");
     document.getElementById("form-edit-char").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
@@ -777,6 +817,7 @@ const ui = {
         <button type="submit" class="btn-primary btn-full" style="margin-top:8px">🐾 บันทึกโปรไฟล์</button>
       </form>
     `);
+    this._initAppearancePicker('pp');
     document.getElementById('form-pet-profile').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = e.target.querySelector('[type=submit]');
@@ -858,7 +899,9 @@ const ui = {
   },
 
   _petProfileFields(prefix, pe = {}) {
+    const app = pe.appearance || {};
     return `
+      ${this._appearancePicker(prefix, true, app)}
       <div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
         <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🐾 ข้อมูลสัตว์เลี้ยง</div>
         <input  class="input-field" id="${prefix}-breed"        value="${pe.breed||''}"       placeholder="สายพันธุ์ เช่น ไทย, เปอร์เซีย, โกลเด้น, มิกซ์" />
@@ -921,11 +964,14 @@ const ui = {
       training_level:    g(`${prefix}-training`)     || undefined,
       owner_bond:        g(`${prefix}-bond`)         || undefined,
       personality_notes: g(`${prefix}-pet-notes`)    || undefined,
+      appearance:        this._collectAppearance(prefix),
     };
   },
 
   _profileExtraFields(prefix, pe = {}) {
+    const app = pe.appearance || {};
     return `
+      ${this._appearancePicker(prefix, false, app)}
       <div style="border-top:1px solid var(--border);margin:10px 0 6px;padding-top:8px">
         <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">โปรไฟล์เพิ่มเติม</div>
         <input  class="input-field" id="${prefix}-hometown"   value="${pe.hometown||""}"   placeholder="บ้านเกิด / จังหวัด" />
@@ -958,7 +1004,75 @@ const ui = {
       hobbies:           g(`${prefix}-hobbies`)   || undefined,
       leisure:           g(`${prefix}-leisure`)   || undefined,
       personality_notes: g(`${prefix}-notes`)     || undefined,
+      appearance:        this._collectAppearance(prefix),
     };
+  },
+
+  _appearancePicker(prefix, isPet, appearance = {}) {
+    if (isPet) {
+      return `<div class="appearance-picker" id="${prefix}-appearance">
+        <div class="ap-section-label">🎨 ลักษณะภายนอก</div>
+        <div class="ap-row"><span class="ap-label">สีขน</span>
+          <div class="ap-swatches">${PET_BODY_COLORS.map(c =>
+            `<span class="color-swatch${appearance.body_color===c.hex?' swatch-sel':''}" data-field="body_color" data-color="${c.hex}" style="background:${c.hex}" title="${c.label}"></span>`
+          ).join('')}</div></div>
+        <div class="ap-row"><span class="ap-label">สีตา</span>
+          <div class="ap-swatches">${PET_EYE_COLORS.map(c =>
+            `<span class="color-swatch${appearance.eye_color===c.hex?' swatch-sel':''}" data-field="eye_color" data-color="${c.hex}" style="background:${c.hex}" title="${c.label}"></span>`
+          ).join('')}</div></div>
+      </div>`;
+    }
+    const hs = appearance.hair_style || 'short';
+    return `<div class="appearance-picker" id="${prefix}-appearance">
+      <div class="ap-section-label">🎨 ลักษณะภายนอก</div>
+      <div class="ap-row"><span class="ap-label">เสื้อ</span>
+        <div class="ap-swatches">${SHIRT_COLORS.map(c =>
+          `<span class="color-swatch${appearance.shirt===c.hex?' swatch-sel':''}" data-field="shirt" data-color="${c.hex}" style="background:${c.hex}" title="${c.label}"></span>`
+        ).join('')}</div></div>
+      <div class="ap-row"><span class="ap-label">กางเกง</span>
+        <div class="ap-swatches">${PANTS_COLORS.map(c =>
+          `<span class="color-swatch${appearance.pants===c.hex?' swatch-sel':''}" data-field="pants" data-color="${c.hex}" style="background:${c.hex}" title="${c.label}"></span>`
+        ).join('')}</div></div>
+      <div class="ap-row"><span class="ap-label">สีผม</span>
+        <div class="ap-swatches">${HAIR_COLORS.map(c =>
+          `<span class="color-swatch${appearance.hair_color===c.hex?' swatch-sel':''}" data-field="hair_color" data-color="${c.hex}" style="background:${c.hex}" title="${c.label}"></span>`
+        ).join('')}</div></div>
+      <div class="ap-row"><span class="ap-label">ทรงผม</span>
+        <div class="ap-hair-styles">${HAIR_STYLES.map(s =>
+          `<button type="button" class="hair-style-btn${hs===s.key?' hs-sel':''}" data-style="${s.key}">${s.label}</button>`
+        ).join('')}</div></div>
+    </div>`;
+  },
+
+  _initAppearancePicker(prefix) {
+    const container = document.getElementById(`${prefix}-appearance`);
+    if (!container) return;
+    container.addEventListener('click', (e) => {
+      const sw = e.target.closest('.color-swatch');
+      if (sw) {
+        const field = sw.dataset.field;
+        container.querySelectorAll(`.color-swatch[data-field="${field}"]`).forEach(s => s.classList.remove('swatch-sel'));
+        sw.classList.add('swatch-sel');
+        return;
+      }
+      const hs = e.target.closest('.hair-style-btn');
+      if (hs) {
+        container.querySelectorAll('.hair-style-btn').forEach(b => b.classList.remove('hs-sel'));
+        hs.classList.add('hs-sel');
+      }
+    });
+  },
+
+  _collectAppearance(prefix) {
+    const container = document.getElementById(`${prefix}-appearance`);
+    if (!container) return undefined;
+    const result = {};
+    container.querySelectorAll('.color-swatch.swatch-sel').forEach(sw => {
+      result[sw.dataset.field] = sw.dataset.color;
+    });
+    const hsBtn = container.querySelector('.hair-style-btn.hs-sel');
+    if (hsBtn) result.hair_style = hsBtn.dataset.style;
+    return Object.keys(result).length > 0 ? result : undefined;
   },
 
   _charTypeOptions(selected = "human") {
@@ -990,6 +1104,7 @@ const ui = {
           profileSection.innerHTML = cfg.isPet
             ? this._petProfileFields(prefix, {})
             : this._profileExtraFields(prefix, {});
+          this._initAppearancePicker(prefix);
         }
       }
     };
@@ -1027,6 +1142,7 @@ const ui = {
       </form>
     `);
     this._setupCharTypeForm("f");
+    this._initAppearancePicker("f");
     document.getElementById("form-add-char").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
