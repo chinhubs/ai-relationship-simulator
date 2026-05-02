@@ -11,6 +11,7 @@ class CharacterCreate(BaseModel):
     gender: str = "unspecified"
     relationship_status: str = "single"
     partner_id: int | None = None
+    profile_extra: dict = Field(default_factory=dict)
 
 
 class CharacterRead(BaseModel):
@@ -23,6 +24,7 @@ class CharacterRead(BaseModel):
     gender: str
     relationship_status: str
     partner_id: int | None
+    profile_extra: dict
     is_active: bool
     created_at: datetime
 
@@ -39,6 +41,7 @@ class CharacterUpdate(BaseModel):
     relationship_status: str | None = None
     partner_id: int | None = None
     clear_partner: bool = False
+    profile_extra: dict | None = None
 
 
 class EmotionState(BaseModel):

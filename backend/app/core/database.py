@@ -24,6 +24,7 @@ async def init_db():
             "ALTER TABLE characters ADD COLUMN gender TEXT DEFAULT 'unspecified'",
             "ALTER TABLE characters ADD COLUMN relationship_status TEXT DEFAULT 'single'",
             "ALTER TABLE characters ADD COLUMN partner_id INTEGER REFERENCES characters(id)",
+            "ALTER TABLE characters ADD COLUMN profile_extra TEXT DEFAULT '{}'",
         ]:
             try:
                 await conn.execute(text(stmt))

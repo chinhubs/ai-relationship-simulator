@@ -250,6 +250,7 @@ const ui = {
         <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px">❤️ คู่รัก / แฟน</label>
         <select class="input-field" id="e-partner">${partnerOptions}</select>
         <input class="input-field" id="e-emoji" value="${char.avatar_emoji || ""}" placeholder="Avatar emoji เช่น 👩" maxlength="2" />
+        ${this._profileExtraFields("e", char.profile_extra || {})}
         <button type="submit" class="btn-primary btn-full" style="margin-top:8px">💾 บันทึก</button>
       </form>
     `);
@@ -265,6 +266,7 @@ const ui = {
           gender:              document.getElementById("e-gender").value,
           relationship_status: document.getElementById("e-rel-status").value,
           avatar_emoji:        document.getElementById("e-emoji").value      || null,
+          profile_extra:       this._collectProfileExtra("e"),
         };
         if (partnerVal) {
           payload.partner_id = parseInt(partnerVal);
@@ -409,6 +411,43 @@ const ui = {
     }
   },
 
+  _profileExtraFields(prefix, pe = {}) {
+    return `
+      <div style="border-top:1px solid var(--border);margin:10px 0 6px;padding-top:8px">
+        <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">โปรไฟล์เพิ่มเติม</div>
+        <input  class="input-field" id="${prefix}-hometown"   value="${pe.hometown||""}"   placeholder="บ้านเกิด / จังหวัด" />
+        <input  class="input-field" id="${prefix}-education"  value="${pe.education||""}"  placeholder="การศึกษา เช่น ป.ตรี วิศวะ มหิดล" />
+        <select class="input-field" id="${prefix}-living">
+          <option value="" ${!pe.living_situation?"selected":""}>การอยู่อาศัย (ไม่ระบุ)</option>
+          <option value="อยู่คนเดียว" ${pe.living_situation==="อยู่คนเดียว"?"selected":""}>อยู่คนเดียว 🏠</option>
+          <option value="อยู่กับครอบครัว" ${pe.living_situation==="อยู่กับครอบครัว"?"selected":""}>อยู่กับครอบครัว 👨‍👩‍👧</option>
+          <option value="อยู่กับแฟน" ${pe.living_situation==="อยู่กับแฟน"?"selected":""}>อยู่กับแฟน 💑</option>
+          <option value="อยู่หอพัก" ${pe.living_situation==="อยู่หอพัก"?"selected":""}>อยู่หอพัก 🏢</option>
+          <option value="อยู่กับเพื่อน" ${pe.living_situation==="อยู่กับเพื่อน"?"selected":""}>อยู่กับเพื่อน 👯</option>
+        </select>
+        <textarea class="input-field" id="${prefix}-work"     rows="2" placeholder="รายละเอียดงาน: สถานที่ทำงาน, เวลาทำงาน, สไตล์การทำงาน...">${pe.work_details||""}</textarea>
+        <textarea class="input-field" id="${prefix}-routine"  rows="2" placeholder="กิจวัตรประจำวัน: ตื่น ออกกำลัง ทำอะไรช่วงเช้า/เย็น/ดึก...">${pe.daily_routine||""}</textarea>
+        <textarea class="input-field" id="${prefix}-hobbies"  rows="2" placeholder="งานอดิเรก / ความสนใจ: ดนตรี กีฬา ทำอาหาร ฯลฯ">${pe.hobbies||""}</textarea>
+        <textarea class="input-field" id="${prefix}-leisure"  rows="2" placeholder="กิจกรรมยามว่าง: ชอบทำอะไรเพื่อผ่อนคลาย?">${pe.leisure||""}</textarea>
+        <textarea class="input-field" id="${prefix}-notes"    rows="2" placeholder="หมายเหตุเพิ่มเติม: นิสัย ความเชื่อ จุดเด่น ที่ต้องรู้...">${pe.personality_notes||""}</textarea>
+      </div>
+    `;
+  },
+
+  _collectProfileExtra(prefix) {
+    const g = id => document.getElementById(id)?.value?.trim() || null;
+    return {
+      hometown:          g(`${prefix}-hometown`)  || undefined,
+      education:         g(`${prefix}-education`) || undefined,
+      living_situation:  g(`${prefix}-living`)    || undefined,
+      work_details:      g(`${prefix}-work`)      || undefined,
+      daily_routine:     g(`${prefix}-routine`)   || undefined,
+      hobbies:           g(`${prefix}-hobbies`)   || undefined,
+      leisure:           g(`${prefix}-leisure`)   || undefined,
+      personality_notes: g(`${prefix}-notes`)     || undefined,
+    };
+  },
+
   showAddCharacterForm() {
     this.showModal(`
       <h2 style="color:var(--accent);margin-bottom:12px">เพิ่มตัวละคร</h2>
@@ -431,6 +470,7 @@ const ui = {
           <option value="widowed">ม่าย 🖤</option>
         </select>
         <input class="input-field" id="f-emoji" placeholder="Avatar emoji เช่น 👩" maxlength="2" />
+        ${this._profileExtraFields("f")}
         <button type="submit" class="btn-primary btn-full" style="margin-top:8px">สร้างตัวละคร</button>
       </form>
     `);
@@ -445,6 +485,7 @@ const ui = {
           gender: document.getElementById("f-gender").value,
           relationship_status: document.getElementById("f-rel-status").value,
           avatar_emoji: document.getElementById("f-emoji").value || null,
+          profile_extra: this._collectProfileExtra("f"),
         });
         ui.closeModal();
         ui.log(`Created character: ${char.name}`, "event");

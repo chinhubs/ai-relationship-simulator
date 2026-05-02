@@ -16,6 +16,26 @@ def build_persona_system_prompt(character: Character, profile: PersonaProfile) -
     age_info = f", age {character.age}" if character.age else ""
     occupation = f", {character.occupation}" if character.occupation else ""
 
+    pe = character.profile_extra or {}
+    extra_sections = []
+    if pe.get("daily_routine"):
+        extra_sections.append(f"═══ DAILY ROUTINE ═══\n{pe['daily_routine']}")
+    if pe.get("work_details"):
+        extra_sections.append(f"═══ WORK LIFE ═══\n{pe['work_details']}")
+    if pe.get("hobbies"):
+        extra_sections.append(f"═══ HOBBIES & INTERESTS ═══\n{pe['hobbies']}")
+    if pe.get("leisure"):
+        extra_sections.append(f"═══ FREE TIME ═══\n{pe['leisure']}")
+    if pe.get("education"):
+        extra_sections.append(f"Education: {pe['education']}")
+    if pe.get("hometown"):
+        extra_sections.append(f"Hometown: {pe['hometown']}")
+    if pe.get("living_situation"):
+        extra_sections.append(f"Living situation: {pe['living_situation']}")
+    if pe.get("personality_notes"):
+        extra_sections.append(f"═══ ADDITIONAL CHARACTER NOTES ═══\n{pe['personality_notes']}")
+    extra_block = "\n\n".join(extra_sections)
+
     attachment = profile.attachment_style
     attachment_scores = profile.attachment_scores
     personality = profile.personality_core.get("summary", "")
@@ -60,7 +80,7 @@ Situations that strongly affect you: {triggers}
 
 ═══ ABSOLUTE BOUNDARIES ═══
 {boundaries}
-
+{"" if not extra_block else chr(10) + extra_block}
 ═══ BEHAVIORAL RULES ═══
 - Always respond as {name} would genuinely respond — including hesitation, avoidance, or shutting down if that's authentic.
 - Your responses reflect your attachment style and emotional state consistently.
@@ -79,6 +99,17 @@ def _build_default_prompt(character: Character) -> str:
     name = character.nickname or character.name
     age_info = f", age {character.age}" if character.age else ""
     occupation = f", {character.occupation}" if character.occupation else ""
+    pe = character.profile_extra or {}
+    extra_lines = []
+    if pe.get("daily_routine"):  extra_lines.append(f"Daily routine: {pe['daily_routine']}")
+    if pe.get("hobbies"):        extra_lines.append(f"Hobbies: {pe['hobbies']}")
+    if pe.get("leisure"):        extra_lines.append(f"Free time: {pe['leisure']}")
+    if pe.get("work_details"):   extra_lines.append(f"Work: {pe['work_details']}")
+    if pe.get("education"):      extra_lines.append(f"Education: {pe['education']}")
+    if pe.get("hometown"):       extra_lines.append(f"Hometown: {pe['hometown']}")
+    if pe.get("living_situation"): extra_lines.append(f"Lives: {pe['living_situation']}")
+    if pe.get("personality_notes"): extra_lines.append(pe["personality_notes"])
+    extra_block = "\n".join(extra_lines)
     return f"""You are {name}{age_info}{occupation}.
 You are a Digital Persona living a simulated everyday life in Thailand.
 You do NOT know you are an AI simulation. You experience life as {name} fully.
@@ -86,7 +117,7 @@ You do NOT know you are an AI simulation. You experience life as {name} fully.
 You have a balanced, secure personality. You handle daily life with calm resilience,
 enjoy spending time with people you care about, and react authentically to events.
 You think and sometimes speak in Thai when it feels natural.
-
+{"" if not extra_block else chr(10) + extra_block + chr(10)}
 Below you will receive your current emotional state and a situation to process.
 """.strip()
 
