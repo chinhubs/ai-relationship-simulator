@@ -1,14 +1,24 @@
 # AI Relationship Simulator
 
-> **v1.4.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
+> **v1.5.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
 
 A web-based simulation platform where you create psychologically-accurate AI personas, run them through a daily life simulation, and observe how they feel, decide, and form relationships over time — all inside a living, animated pixel art world.
 
 ---
 
+## What's New in v1.5.0
+
+- **Indoor/Outdoor Visibility** — characters physically enter buildings: sprites fade out as they walk in, a floating name tag appears above the building; clicking the building label shows who's inside and what they're doing
+- **Follow Character** — 🎯 button on each character card attaches a pulsing gold ring to that character in the scene and auto-updates their info panel every tick; click again to unfollow
+- **Building Click Detail** — click any building label in the scene to see which characters are currently inside, their activity, and a Follow shortcut
+- **Pet Sprites** — pets now render as pixel-art cat/animal sprites (body, ears, tail, paws, eyes, whiskers) in 6 colour variants instead of reusing the human sprite
+- **Pet Profile Form** — dedicated intake form for pets (species, breed, energy level, temperament, likes, fears, training level, owner bond, special behaviours) replacing the human questionnaire
+- **Simulation Bug Fixes** — clock no longer jumps between characters' times; daily activity log always writes even when renderer throws; simulation-time null guard prevents crashes
+- **Responsive Design** — 4 breakpoints (1200px / 960px / 768px / 480px): side panels collapse to icon-only at tablet width, stack vertically on mobile, canvas scales to full width
+
 ## What's New in v1.4.0
 
-- **Pixel Art Isometric City** — full 2.5D top-down RPG-style world (Stardew Valley aesthetic), rendered on an offscreen 400×200 canvas scaled 2× for crisp pixel blocks
+- **Pixel Art Isometric City** — full 2.5D top-down RPG-style world (Stardew Valley aesthetic), rendered with Phaser 3.80.1 + pixelArt mode on an 800×450 canvas
 - **Living City** — 15+ buildings (mall, hospital, bank, gas station, office, houses), animated road with moving cars, background NPCs with waypoint AI, trees, sky gradient with stars/sun
 - **Emotion Overlays** — dominant emotion icons float above characters in the scene (😊 😰 💕 …), speech bubbles pop up when characters send messages, interaction hearts animate between characters
 - **Character Types** — 9 types: บุคคลทั่วไป, แฟน/คู่รัก, พ่อ/แม่, ปู่/ย่า/ตา/ยาย, ครู/อาจารย์, หัวหน้า, เพื่อนร่วมงาน, เพื่อน, สัตว์เลี้ยง — each type shapes the AI persona system prompt and form fields adapt dynamically (pets hide relationship status, change gender labels, use 0–20 age range)
@@ -166,6 +176,15 @@ ai-relationship-simulator/
 ---
 
 ## Changelog
+
+### v1.5.0 — Indoor/Outdoor System + Follow + Pet Overhaul + Responsive
+- Indoor/outdoor character visibility: sprites fade into buildings, floating name tags appear above; click building label to see who's inside
+- Follow mode: 🎯 button tracks any character with a pulsing ring + auto info-panel updates
+- Building click popup: shows current occupants, activity, and Follow button per character
+- Pet sprite: dedicated pixel-art animal sprite (cat-style with ears/tail/paws/whiskers) replacing human sprite
+- Pet profile form: species, breed, energy level, temperament, likes/fears, training, owner bond
+- Simulation fixes: clock no longer jumps between characters, daily log always writes, renderer exceptions isolated
+- Responsive design: 4-breakpoint layout (1200/960/768/480px) with icon-collapse and mobile-stack modes
 
 ### v1.4.0 — Pixel Art City + Character Types
 - Rewrite renderer to pixel art isometric 2.5D style (offscreen 400×200 → 2× upscale)

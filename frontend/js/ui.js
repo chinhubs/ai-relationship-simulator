@@ -38,6 +38,7 @@ const EMOTION_CONFIG = [
 const ui = {
   _dailyLog: [],         // [{simDay, simTime, charId, charName, avatar, activity, location, decision, isNotable, notableReason, events, actionType}]
   _activeCharFilter: null, // null = all characters
+  _followId: null,
 
   addDailyLogEntry(entry) {
     this._dailyLog.unshift(entry); // newest first
@@ -199,9 +200,10 @@ const ui = {
           <div class="char-rel-status">${typeCfg.isPet ? "" : statusLabel}${partnerLine}</div>
         </div>
         <div class="char-actions">
-          <button class="btn-char-action btn-quiz" title="ทดสอบบุคลิก" data-id="${char.id}">📋</button>
-          <button class="btn-char-action btn-edit" title="แก้ไข"       data-id="${char.id}">✏️</button>
-          <button class="btn-char-action btn-del"  title="ลบ"          data-id="${char.id}">🗑️</button>
+          <button class="btn-char-action btn-quiz"   title="ทดสอบบุคลิก" data-id="${char.id}">📋</button>
+          <button class="btn-char-action btn-follow${this._followId===char.id?' following':''}" title="Follow" data-id="${char.id}">🎯</button>
+          <button class="btn-char-action btn-edit"   title="แก้ไข"       data-id="${char.id}">✏️</button>
+          <button class="btn-char-action btn-del"    title="ลบ"          data-id="${char.id}">🗑️</button>
         </div>
       `;
       card.addEventListener("click", (e) => {
@@ -219,6 +221,10 @@ const ui = {
       card.querySelector(".btn-del").addEventListener("click", (e) => {
         e.stopPropagation();
         ui.confirmDeleteCharacter(char);
+      });
+      card.querySelector(".btn-follow").addEventListener("click", (e) => {
+        e.stopPropagation();
+        ui.followCharacter(char.id);
       });
       container.appendChild(card);
 
@@ -304,18 +310,78 @@ const ui = {
     panel.innerHTML = `<h2 class="panel-title" style="margin-top:10px">ความสัมพันธ์กับคนอื่น</h2>${rows}`;
   },
 
+  followCharacter(charId) {
+    const chars = app.characters || [];
+    const char = chars.find(c => c.id === charId);
+    if (!char) return;
+    if (this._followId === charId) {
+      // unfollow
+      this._followId = null;
+      renderer.unfollowCharacter();
+      document.querySelectorAll('.btn-follow').forEach(b => b.classList.remove('following'));
+      ui.log(`หยุด Follow`, 'tick');
+    } else {
+      this._followId = charId;
+      renderer.followCharacter(charId);
+      ui.selectCharacter(charId, chars);
+      document.querySelectorAll('.btn-follow').forEach(b => {
+        b.classList.toggle('following', parseInt(b.dataset.id) === charId);
+      });
+      ui.log(`🎯 Follow: ${char.nickname || char.name}`, 'event');
+    }
+  },
+
+  _dominantEmoIcon(e) {
+    if (!e) return '😐';
+    if (e.stress > 72)     return '😰';
+    if (e.anxiety > 68)    return '😟';
+    if (e.resentment > 55) return '😠';
+    if (e.loneliness > 68) return '😔';
+    if (e.love > 82)       return '💕';
+    if (e.happiness > 80)  return '😊';
+    if (e.energy < 25)     return '🥱';
+    if (e.security < 30)   return '😨';
+    return '😐';
+  },
+
+  showLocationDetail(building, chars) {
+    const charRows = chars.length === 0
+      ? `<p class="muted" style="padding:8px 0">ไม่มีตัวละครอยู่ที่นี่ตอนนี้</p>`
+      : chars.map(ch => {
+          const emoIcon = this._dominantEmoIcon(ch.emotions);
+          const name = ch.nickname || ch.name;
+          const avatar = ch.avatar_emoji || (ch.character_type==='pet' ? '🐾' : (ch.gender==='female'?'👩':'👨'));
+          return `<div class="loc-char-row">
+            <span style="font-size:22px;margin-right:8px">${avatar}</span>
+            <div style="flex:1">
+              <div style="font-weight:bold;font-size:12px">${name} <span style="font-size:14px">${emoIcon}</span></div>
+              <div class="muted" style="font-size:11px">${ch.activity}</div>
+            </div>
+            <button class="btn-sim btn-blue" style="padding:3px 10px;font-size:10px" onclick="ui.followCharacter(${ch.id});ui.closeModal()">🎯 Follow</button>
+          </div>`;
+        }).join('');
+    this.showModal(`
+      <h2 style="color:var(--accent);margin-bottom:4px">${building.label}</h2>
+      <p class="muted" style="margin-bottom:12px;font-size:11px">ตัวละครที่นี่ตอนนี้ (${chars.length} คน)</p>
+      <div style="display:flex;flex-direction:column;gap:8px">${charRows}</div>
+    `);
+  },
+
   showModal(html) {
     document.getElementById("modal-content").innerHTML = html;
     const overlay = document.getElementById("modal-overlay");
     overlay.classList.remove("hidden");
-    // Delegate likert button clicks
-    overlay.addEventListener("click", (e) => {
-      const btn = e.target.closest(".q-likert-btn");
-      if (!btn) return;
-      const group = btn.closest(".q-likert");
-      group.querySelectorAll(".q-likert-btn").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
-    });
+    // Delegate likert button clicks — attach once only to avoid listener accumulation
+    if (!overlay._likertBound) {
+      overlay._likertBound = true;
+      overlay.addEventListener("click", (e) => {
+        const btn = e.target.closest(".q-likert-btn");
+        if (!btn) return;
+        const group = btn.closest(".q-likert");
+        group.querySelectorAll(".q-likert-btn").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+      });
+    }
   },
 
   closeModal() {
@@ -415,6 +481,7 @@ const ui = {
   // ── Questionnaire ────────────────────────────────────────────────────────
 
   async showQuestionnaireForm(char) {
+    if (char.character_type === 'pet') { return this.showPetProfileForm(char); }
     const name = char.nickname || char.name;
     this.showModal(`
       <h2 style="color:var(--accent);margin-bottom:8px">📋 ทดสอบบุคลิกของ ${name}</h2>
@@ -451,6 +518,33 @@ const ui = {
       ui.log(`Error loading questionnaire: ${err.message}`, "error");
       ui.closeModal();
     }
+  },
+
+  showPetProfileForm(char) {
+    const name = char.nickname || char.name;
+    const pe = char.profile_extra || {};
+    this.showModal(`
+      <h2 style="color:var(--accent);margin-bottom:8px">🐾 โปรไฟล์สัตว์เลี้ยง: ${name}</h2>
+      <p class="muted" style="margin-bottom:12px;font-size:11px">กรอกข้อมูลเกี่ยวกับ${name} เพื่อให้ AI เข้าใจบุคลิกและพฤติกรรม</p>
+      <form id="form-pet-profile">
+        ${this._petProfileFields('pp', pe)}
+        <button type="submit" class="btn-primary btn-full" style="margin-top:8px">🐾 บันทึกโปรไฟล์</button>
+      </form>
+    `);
+    document.getElementById('form-pet-profile').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('[type=submit]');
+      btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
+      try {
+        const extra = this._collectPetExtra('pp');
+        await API.updateCharacter(char.id, { profile_extra: extra });
+        ui.closeModal();
+        ui.log(`🐾 บันทึกโปรไฟล์ ${name} สำเร็จ`, 'event');
+      } catch (err) {
+        btn.disabled = false; btn.textContent = '🐾 บันทึกโปรไฟล์';
+        ui.log(`Error: ${err.message}`, 'error');
+      }
+    });
   },
 
   _renderQuestion(q, idx, total) {
@@ -514,6 +608,73 @@ const ui = {
       btn.textContent = "🧠 วิเคราะห์บุคลิก";
       ui.log(`Error: ${err.message}`, "error");
     }
+  },
+
+  _petProfileFields(prefix, pe = {}) {
+    return `
+      <div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
+        <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🐾 ข้อมูลสัตว์เลี้ยง</div>
+        <input  class="input-field" id="${prefix}-breed"        value="${pe.breed||''}"       placeholder="สายพันธุ์ เช่น ไทย, เปอร์เซีย, โกลเด้น, มิกซ์" />
+        <select class="input-field" id="${prefix}-pet-species">
+          <option value=""              ${!pe.species?"selected":""}>ประเภทสัตว์</option>
+          <option value="แมว"          ${pe.species==="แมว"?"selected":""}>🐱 แมว</option>
+          <option value="หมา"          ${pe.species==="หมา"?"selected":""}>🐶 หมา</option>
+          <option value="กระต่าย"      ${pe.species==="กระต่าย"?"selected":""}>🐰 กระต่าย</option>
+          <option value="นก"           ${pe.species==="นก"?"selected":""}>🐦 นก</option>
+          <option value="ปลา"          ${pe.species==="ปลา"?"selected":""}>🐠 ปลา</option>
+          <option value="หนูแฮมสเตอร์" ${pe.species==="หนูแฮมสเตอร์"?"selected":""}>🐹 หนูแฮมสเตอร์</option>
+          <option value="อื่นๆ"        ${pe.species==="อื่นๆ"?"selected":""}>🐾 อื่นๆ</option>
+        </select>
+        <select class="input-field" id="${prefix}-energy">
+          <option value=""          ${!pe.energy_level?"selected":""}>ระดับพลังงาน</option>
+          <option value="สูงมาก"    ${pe.energy_level==="สูงมาก"?"selected":""}>⚡ สูงมาก — วิ่งเล่นตลอดเวลา</option>
+          <option value="สูง"       ${pe.energy_level==="สูง"?"selected":""}>🏃 สูง — ชอบออกกำลัง</option>
+          <option value="ปานกลาง"   ${pe.energy_level==="ปานกลาง"?"selected":""}>🚶 ปานกลาง — สมดุล</option>
+          <option value="ต่ำ"       ${pe.energy_level==="ต่ำ"?"selected":""}>🛋️ ต่ำ — ชอบนอนพัก</option>
+        </select>
+        <select class="input-field" id="${prefix}-temperament">
+          <option value=""                        ${!pe.temperament?"selected":""}>นิสัยหลัก</option>
+          <option value="ร่าเริงขี้เล่น"          ${pe.temperament==="ร่าเริงขี้เล่น"?"selected":""}>😄 ร่าเริงขี้เล่น</option>
+          <option value="อ่อนโยนรักสงบ"           ${pe.temperament==="อ่อนโยนรักสงบ"?"selected":""}>😌 อ่อนโยนรักสงบ</option>
+          <option value="กล้าหาญชอบผจญภัย"        ${pe.temperament==="กล้าหาญชอบผจญภัย"?"selected":""}>🦁 กล้าหาญชอบผจญภัย</option>
+          <option value="ขี้กลัวระวังตัว"          ${pe.temperament==="ขี้กลัวระวังตัว"?"selected":""}>😨 ขี้กลัวระวังตัว</option>
+          <option value="เจ้าอารมณ์ซน"            ${pe.temperament==="เจ้าอารมณ์ซน"?"selected":""}>😈 เจ้าอารมณ์ซน</option>
+          <option value="เงียบขรึมอิสระ"           ${pe.temperament==="เงียบขรึมอิสระ"?"selected":""}>🐱 เงียบขรึมอิสระ</option>
+          <option value="ชอบคนชอบสังคม"           ${pe.temperament==="ชอบคนชอบสังคม"?"selected":""}>🐶 ชอบคนชอบสังคม</option>
+        </select>
+        <textarea class="input-field" id="${prefix}-likes"    rows="2" placeholder="ชอบอะไร: เช่น ชอบบอลยาง, ชอบนอนตักเจ้าของ, ชอบข้าวกับปลา, ชอบวิ่งเล่นกลางแจ้ง">${pe.likes||''}</textarea>
+        <textarea class="input-field" id="${prefix}-fears"    rows="2" placeholder="กลัวอะไร: เช่น กลัวเสียงดัง, กลัวคนแปลกหน้า, กลัวรถยนต์, กลัวฝนฟ้าคะนอง">${pe.fears||''}</textarea>
+        <select class="input-field" id="${prefix}-training">
+          <option value=""             ${!pe.training_level?"selected":""}>ระดับการฝึก</option>
+          <option value="ดีมาก"        ${pe.training_level==="ดีมาก"?"selected":""}>⭐⭐⭐ ดีมาก — เชื่อฟังคำสั่ง</option>
+          <option value="ปานกลาง"      ${pe.training_level==="ปานกลาง"?"selected":""}>⭐⭐ ปานกลาง — รู้บ้างไม่รู้บ้าง</option>
+          <option value="ยังไม่ได้ฝึก" ${pe.training_level==="ยังไม่ได้ฝึก"?"selected":""}>⭐ ยังไม่ได้ฝึก — ทำตามใจ</option>
+        </select>
+        <select class="input-field" id="${prefix}-bond">
+          <option value=""                          ${!pe.owner_bond?"selected":""}>ความผูกพันกับเจ้าของ</option>
+          <option value="ผูกพันแนบแน่นมาก"         ${pe.owner_bond==="ผูกพันแนบแน่นมาก"?"selected":""}>❤️ ผูกพันแนบแน่นมาก</option>
+          <option value="รักและไว้ใจ"               ${pe.owner_bond==="รักและไว้ใจ"?"selected":""}>🧡 รักและไว้ใจ</option>
+          <option value="เป็นอิสระแต่รักกัน"        ${pe.owner_bond==="เป็นอิสระแต่รักกัน"?"selected":""}>💛 เป็นอิสระแต่รักกัน</option>
+          <option value="มีระยะห่าง"                ${pe.owner_bond==="มีระยะห่าง"?"selected":""}>🤍 มีระยะห่าง</option>
+        </select>
+        <textarea class="input-field" id="${prefix}-pet-notes" rows="2" placeholder="พฤติกรรมพิเศษ: เช่น ชอบนอนบนหมอน, เห่าเวลามีคนมา, ชอบซุกหัวใต้ผ้าห่ม, ขโมยอาหาร">${pe.personality_notes||''}</textarea>
+      </div>
+    `;
+  },
+
+  _collectPetExtra(prefix) {
+    const g = id => document.getElementById(id)?.value?.trim() || null;
+    return {
+      breed:             g(`${prefix}-breed`)        || undefined,
+      species:           g(`${prefix}-pet-species`)  || undefined,
+      energy_level:      g(`${prefix}-energy`)       || undefined,
+      temperament:       g(`${prefix}-temperament`)  || undefined,
+      likes:             g(`${prefix}-likes`)        || undefined,
+      fears:             g(`${prefix}-fears`)        || undefined,
+      training_level:    g(`${prefix}-training`)     || undefined,
+      owner_bond:        g(`${prefix}-bond`)         || undefined,
+      personality_notes: g(`${prefix}-pet-notes`)    || undefined,
+    };
   },
 
   _profileExtraFields(prefix, pe = {}) {

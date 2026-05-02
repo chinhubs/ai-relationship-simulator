@@ -53,6 +53,14 @@ const app = {
         ui.log(`Event injection failed: ${err.message}`, "error");
       }
     });
+
+    // Renderer interactive callbacks
+    renderer.onBuildingClick = (building, chars) => {
+      ui.showLocationDetail(building, chars);
+    };
+    renderer.onCharacterClick = (charId) => {
+      ui.selectCharacter(charId, app.characters || []);
+    };
   },
 };
 

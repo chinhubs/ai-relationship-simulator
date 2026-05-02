@@ -14,9 +14,9 @@ const _rs = {
   _scene:   null,
 };
 
-// ─── Isometric projection (64×32 tiles) ──────────────────────────────────────
-const TW = 64, TH = 32;
-const OX = 390, OY = 60;   // grid origin on 800×450 canvas
+// ─── Isometric projection (48×24 tiles — fits 15×13 grid in 800×450) ─────────
+const TW = 48, TH = 24;
+const OX = 380, OY = 100;  // grid origin: X range≈92–716, Y range≈100–412
 
 function isoX(c, r)      { return OX + (c - r) * (TW / 2); }
 function isoY(c, r, z=0) { return OY + (c + r) * (TH / 2) - z; }
@@ -25,32 +25,32 @@ function isoDepth(c, r, z=0) { return (c + r) * 1000 + z; }
 // ─── City buildings ───────────────────────────────────────────────────────────
 const BUILDINGS = [
   { c:0,  r:0,  cw:2, rh:2, bh:44,  type:"house",      label:"🏠 บ้าน",            top:0xd8b870, left:0xb89048, right:0x906828,
-    keys:["home","บ้าน","bedroom","ห้องนอน","kitchen","ครัว","living","bathroom","ห้องน้ำ"] },
+    keys:["home","บ้าน","ที่บ้าน","บ้านของ","นอน","bedroom","ห้องนอน","kitchen","ครัว","living","bathroom","ห้องน้ำ","house","ที่พัก","อยู่บ้าน"] },
   { c:3,  r:0,  cw:2, rh:2, bh:36,  type:"house",      label:"🏠 บ้านเพื่อนบ้าน",  top:0xb8d080, left:0x88a858, right:0x688040, keys:[] },
   { c:0,  r:3,  cw:2, rh:2, bh:34,  type:"house",      label:"🏠 บ้านเพื่อนบ้าน",  top:0xe0b8a0, left:0xb88870, right:0x906050, keys:[] },
   { c:3,  r:3,  cw:2, rh:2, bh:32,  type:"house",      label:"🏠 บ้านเพื่อนบ้าน",  top:0xc8b8e0, left:0x9878c0, right:0x7858a0, keys:[] },
   { c:0,  r:8,  cw:2, rh:1, bh:28,  type:"store",      label:"🏪 7-Eleven",         top:0x206030, left:0xc82020, right:0x901010,
-    keys:["7-eleven","convenience store","near office"] },
+    keys:["7-eleven","convenience store","near office","ร้านสะดวก","minimart"] },
   { c:0,  r:10, cw:2, rh:1, bh:24,  type:"gas",        label:"⛽ ปั๊มน้ำมัน",      top:0xd8b010, left:0xa87808, right:0x785806,
-    keys:["gas station","ปั๊มน้ำมัน","ปั๊ม"] },
+    keys:["gas station","ปั๊มน้ำมัน","ปั๊ม","gas"] },
   { c:3,  r:8,  cw:2, rh:1, bh:28,  type:"cafe",       label:"☕ คาเฟ่",            top:0xa87038, left:0x806028, right:0x584018,
-    keys:["cafe","คาเฟ่","coffee"] },
+    keys:["cafe","คาเฟ่","coffee","กาแฟ","ร้านกาแฟ","ชา","ชานม"] },
   { c:3,  r:10, cw:2, rh:2, bh:34,  type:"restaurant", label:"🍜 ร้านอาหาร",        top:0xd84820, left:0xa83010, right:0x802008,
-    keys:["restaurant","ร้านอาหาร","food court"] },
+    keys:["restaurant","ร้านอาหาร","food court","ทานข้าว","กินข้าว","อาหาร","lunch","dinner","breakfast","มื้อ","ข้าว","food"] },
   { c:9,  r:0,  cw:3, rh:3, bh:120, type:"office",     label:"🏢 ตึกทำงาน",         top:0x5878b8, left:0x3850a0, right:0x283880,
-    keys:["office","ทำงาน","บริษัท","work"] },
+    keys:["office","ทำงาน","ที่ทำงาน","บริษัท","work","สำนักงาน","ออฟฟิศ","ตึก","at work","working"] },
   { c:9,  r:4,  cw:2, rh:2, bh:70,  type:"hospital",   label:"🏥 โรงพยาบาล",       top:0xd8eef8, left:0xa0c8e0, right:0x7098b0,
-    keys:["hospital","โรงพยาบาล","clinic","หมอ"] },
+    keys:["hospital","โรงพยาบาล","clinic","หมอ","doctor","พยาบาล","คลินิก","นพ"] },
   { c:12, r:1,  cw:2, rh:2, bh:65,  type:"bank",       label:"🏦 ธนาคาร",           top:0xd8b830, left:0xa88818, right:0x785808,
-    keys:["bank","ธนาคาร","atm"] },
+    keys:["bank","ธนาคาร","atm","ธนาคาร","ถอนเงิน","โอนเงิน"] },
   { c:12, r:4,  cw:2, rh:2, bh:44,  type:"gym",        label:"🏋 ฟิตเนส",           top:0xc84818, left:0x982808, right:0x681808,
-    keys:["gym","ฟิตเนส","sport","สนามกีฬา"] },
+    keys:["gym","ฟิตเนส","sport","สนามกีฬา","exercise","ออกกำลัง","วิ่ง","fitness","กีฬา","yoga"] },
   { c:9,  r:9,  cw:4, rh:3, bh:75,  type:"mall",       label:"🛍 ห้างสรรพสินค้า",   top:0xc0b0e8, left:0x9080c8, right:0x705098,
-    keys:["shopping mall","mall","ห้างสรรพสินค้า","ห้าง"] },
+    keys:["shopping mall","mall","ห้างสรรพสินค้า","ห้าง","ซื้อของ","shopping","เดินห้าง","ตลาด"] },
   { c:5,  r:6,  cw:2, rh:1, bh:26,  type:"bts",        label:"🚉 BTS",              top:0x3878c0, left:0x205890, right:0x103870,
-    keys:["bts","รถไฟฟ้า","station"] },
+    keys:["bts","รถไฟฟ้า","station","สถานี","subway","mrt","รถไฟ","transit"] },
   { c:0,  r:5,  cw:1, rh:1, bh:18,  type:"park",       label:"🌳 ศาลา",             top:0x607838, left:0x485828, right:0x303818,
-    keys:["park","สวน","garden"] },
+    keys:["park","สวน","garden","สวนสาธารณะ","outdoor","ข้างนอก","นั่งเล่น","ทางเดิน"] },
 ];
 
 // ─── Tile classification ──────────────────────────────────────────────────────
@@ -66,6 +66,12 @@ function findBuilding(loc) {
   return BUILDINGS.find(b => b.keys && b.keys.some(k => l.includes(k))) || null;
 }
 function bldgEntrance(b) { return { c: b.c + b.cw * 0.5, r: b.r + b.rh }; }
+
+// Sidewalk waypoints for characters with outdoor/transit locations
+const OUTDOOR_SPOTS = [
+  {c:6,r:3},{c:8,r:3},{c:6,r:9},{c:8,r:9},
+  {c:6,r:1},{c:8,r:1},{c:6,r:11},{c:8,r:11},
+];
 
 // ─── NPC definitions ──────────────────────────────────────────────────────────
 const NPC_DEFS = [
@@ -93,6 +99,16 @@ const INIT_CARS = [
   {t:0.75,dir:-1,axis:"v",ci:4},{t:0.45,dir:1, axis:"h",ci:5},
 ];
 
+// ─── Pet sprite palette ───────────────────────────────────────────────────────
+const PET_PALETTE = [
+  { body:0xd09050, dark:0x805028, eye:0x20c030 }, // orange tabby
+  { body:0x303030, dark:0x181818, eye:0xf0d820 }, // black
+  { body:0xe0d8c8, dark:0xb09870, eye:0x20a8d8 }, // cream/white
+  { body:0x808070, dark:0x504840, eye:0x30d050 }, // gray
+  { body:0xa07040, dark:0x604020, eye:0xd0a020 }, // brown
+  { body:0xd0c088, dark:0xa08050, eye:0x38b828 }, // golden
+];
+
 // ─── Colour helpers ───────────────────────────────────────────────────────────
 function lighten(hex, amt)  {
   const r=Math.min(255,((hex>>16)&0xff)+amt), g=Math.min(255,((hex>>8)&0xff)+amt), b=Math.min(255,(hex&0xff)+amt);
@@ -115,6 +131,7 @@ class IsoScene extends Phaser.Scene {
     this._npcs = [];
     this._cars = [];
     this._depthLayer = 0;
+    this._followId = null;
 
     this._makeTileTextures();
     this._makeCharTextures();
@@ -230,6 +247,12 @@ class IsoScene extends Phaser.Scene {
       this._genSprite(`npc_${ni}_r`, d.shirt, d.pants, d.hair, true,  d.female);
       this._genSprite(`npc_${ni}_l`, d.shirt, d.pants, d.hair, false, d.female);
     }
+    // Pet textures
+    for (let ci = 0; ci < 6; ci++) {
+      const { body, dark, eye } = PET_PALETTE[ci];
+      this._genPetSprite(`pet_${ci}_r`, body, dark, eye, true);
+      this._genPetSprite(`pet_${ci}_l`, body, dark, eye, false);
+    }
   }
 
   _genSprite(key, shirt, pants, hair, right, female) {
@@ -272,6 +295,54 @@ class IsoScene extends Phaser.Scene {
     g.lineStyle(1, 0x000000, 0.4);
     g.strokeRect(right?1:3, H-17, 10, 12);
 
+    g.generateTexture(key, W, H);
+    g.destroy();
+  }
+
+  _genPetSprite(key, body, dark, eyeColor, isRight) {
+    const W = 16, H = 24;
+    const g = this.make.graphics({ x:0, y:0, add:false });
+    const light = lighten(body, 40);
+    // Shadow
+    g.fillStyle(0x000000, 0.12); g.fillEllipse(8, 23, 12, 3);
+    // Tail (back of animal)
+    g.fillStyle(body);
+    if (isRight) { g.fillRect(0, 10, 3, 2); g.fillRect(0, 8, 2, 3); g.fillRect(1, 7, 2, 2); }
+    else         { g.fillRect(13, 10, 3, 2); g.fillRect(14, 8, 2, 3); g.fillRect(13, 7, 2, 2); }
+    // Body
+    g.fillStyle(body);  g.fillRect(3, 11, 10, 7);
+    g.fillStyle(light); g.fillRect(5, 12, 6, 5); // tummy
+    // Head (on the side the animal is facing)
+    const hx = isRight ? 7 : 1;
+    g.fillStyle(body); g.fillRect(hx, 3, 8, 8);
+    // Pointed ears
+    g.fillStyle(dark);
+    g.fillTriangle(hx, 3, hx+2, 3, hx+1, 0);
+    g.fillTriangle(hx+5, 3, hx+7, 3, hx+6, 0);
+    g.fillStyle(lighten(dark, 60));
+    g.fillRect(hx, 1, 1, 2); g.fillRect(hx+5, 1, 1, 2);
+    // Eyes
+    g.fillStyle(eyeColor); g.fillRect(hx+2, 6, 1, 2); g.fillRect(hx+5, 6, 1, 2);
+    g.fillStyle(0x060404);  g.fillRect(hx+2, 7, 1, 1); g.fillRect(hx+5, 7, 1, 1);
+    // Nose
+    g.fillStyle(0xd07878); g.fillRect(hx+3, 9, 2, 1);
+    // Whiskers
+    g.lineStyle(0.5, lighten(body, 60), 0.6);
+    if (isRight) {
+      g.beginPath(); g.moveTo(hx, 9); g.lineTo(hx-3, 8); g.strokePath();
+      g.beginPath(); g.moveTo(hx, 10); g.lineTo(hx-3, 11); g.strokePath();
+    } else {
+      g.beginPath(); g.moveTo(hx+8, 9); g.lineTo(hx+11, 8); g.strokePath();
+      g.beginPath(); g.moveTo(hx+8, 10); g.lineTo(hx+11, 11); g.strokePath();
+    }
+    // Legs (4 stubby legs)
+    g.fillStyle(body);
+    g.fillRect(3, 18, 2, 5); g.fillRect(6, 18, 2, 5);
+    g.fillRect(9, 18, 2, 5); g.fillRect(12, 18, 2, 5);
+    // Paws
+    g.fillStyle(dark);
+    g.fillRect(3, 22, 3, 2); g.fillRect(6, 22, 3, 2);
+    g.fillRect(9, 22, 3, 2); g.fillRect(12, 22, 3, 2);
     g.generateTexture(key, W, H);
     g.destroy();
   }
@@ -484,8 +555,6 @@ class IsoScene extends Phaser.Scene {
           // South-face window position
           const bx = isoX(c,r+rh) + (isoX(c+cw,r+rh)-isoX(c,r+rh))*tu;
           const by = isoY(c,r+rh) + (isoY(c+cw,r+rh)-isoY(c,r+rh))*tu - bh*(1-tv);
-          const bx2= isoX(c,r+rh) + (isoX(c+cw,r+rh)-isoX(c,r+rh))*(tu+0.2/cols);
-          const by2= by + 4;
           // Window frame
           wg.fillStyle(darken(left,20));
           wg.fillRect(bx-3, by-5, 7, 6);
@@ -520,7 +589,22 @@ class IsoScene extends Phaser.Scene {
       fontFamily: 'monospace', fontSize: '8px',
       color: '#f8e8b0', stroke: '#1a0806', strokeThickness: 2,
       resolution: 2,
-    }).setOrigin(0.5, 1).setDepth(baseD + 50);
+    }).setOrigin(0.5, 1).setDepth(baseD + 50)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerover', () => txt.setStyle({ color: '#ffe060' }))
+      .on('pointerout',  () => txt.setStyle({ color: '#f8e8b0' }))
+      .on('pointerdown', () => {
+        const charsHere = _rs.chars.filter(ch => {
+          const m = _rs.moves.get(ch.id);
+          return m && b.keys.length > 0 && b.keys.some(k => (m.locStr||'').toLowerCase().includes(k));
+        }).map(ch => ({
+          ...ch,
+          activity: _rs.moves.get(ch.id)?.activity || '—',
+          locStr:   _rs.moves.get(ch.id)?.locStr   || '',
+          emotions: _rs.emotions.get(ch.id) || null,
+        }));
+        if (renderer.onBuildingClick) renderer.onBuildingClick(b, charsHere);
+      });
   }
 
   _winGlass(bh) {
@@ -653,8 +737,12 @@ class IsoScene extends Phaser.Scene {
       if (!this._charObjs.has(ch.id)) {
         const ci = ch.colorIdx ?? (i % 6);
         const g  = ch.gender==='female' ? 'f' : 'm';
-        const spr= this.add.image(startX + i*10, startY, `char_${ci}_r_${g}`).setOrigin(0.5, 0.95);
+        const isPet = ch.character_type === 'pet';
+        const texKey = isPet ? `pet_${ci}_r` : `char_${ci}_r_${g}`;
+        const spr= this.add.image(startX + i*10, startY, texKey).setOrigin(0.5, 0.95);
         spr.setDepth(startY*100+200);
+        spr.setInteractive({ useHandCursor: true })
+          .on('pointerdown', () => { if (renderer.onCharacterClick) renderer.onCharacterClick(ch.id); });
         const lbl = this.add.text(startX+i*10, startY-30, ch.nickname||ch.name.split(' ')[0], {
           fontFamily:'monospace', fontSize:'9px', color:'#f8e898',
           stroke:'#1a0a04', strokeThickness:3, resolution:2,
@@ -663,6 +751,7 @@ class IsoScene extends Phaser.Scene {
           sprite:spr, label:lbl, px:startX+i*10, py:startY,
           tx:startX+i*10, ty:startY, ci, g,
           facingRight:true,
+          isIndoor: false, indoorBuilding: null, _alpha: 1,
         });
       }
     }
@@ -672,12 +761,24 @@ class IsoScene extends Phaser.Scene {
     const obj = this._charObjs.get(charId);
     if (!obj) return;
     const b = findBuilding(locStr);
-    if (!b) return;
-    const ent = bldgEntrance(b);
     const idx = [...this._charObjs.keys()].indexOf(charId);
-    const spread = (idx - (_rs.chars.length-1)/2) * 10;
-    obj.tx = isoX(ent.c, ent.r) + spread;
-    obj.ty = isoY(ent.c, ent.r) - idx*3;
+    const spread = (idx - (_rs.chars.length - 1) / 2) * 10;
+
+    if (b) {
+      // Indoor: walk to building entrance, then sprite fades out
+      obj.isIndoor = true;
+      obj.indoorBuilding = b;
+      const ent = bldgEntrance(b);
+      obj.tx = isoX(ent.c, ent.r) + spread;
+      obj.ty = isoY(ent.c, ent.r) - idx * 3;
+    } else {
+      // Outdoor: visible on a sidewalk tile
+      obj.isIndoor = false;
+      obj.indoorBuilding = null;
+      const spot = OUTDOOR_SPOTS[idx % OUTDOOR_SPOTS.length];
+      obj.tx = isoX(spot.c, spot.r) + spread * 0.4;
+      obj.ty = isoY(spot.c, spot.r);
+    }
   }
 
   _updateMainChars(delta) {
@@ -692,8 +793,19 @@ class IsoScene extends Phaser.Scene {
       obj.label.setDepth(obj.py*100+201);
       // Facing
       const ch = _rs.chars.find(c=>c.id===id);
-      const g = (ch?.gender==='female')?'f':'m';
-      obj.sprite.setTexture(`char_${obj.ci}_${obj.facingRight?'r':'l'}_${g}`);
+      const isPet = ch?.character_type === 'pet';
+      if (isPet) {
+        obj.sprite.setTexture(`pet_${obj.ci}_${obj.facingRight?'r':'l'}`);
+      } else {
+        const g = (ch?.gender==='female')?'f':'m';
+        obj.sprite.setTexture(`char_${obj.ci}_${obj.facingRight?'r':'l'}_${g}`);
+      }
+      // Smooth fade: invisible when fully indoors, visible when outdoors
+      const targetAlpha = obj.isIndoor ? 0 : 1;
+      obj._alpha = (obj._alpha ?? 1) + (targetAlpha - (obj._alpha ?? 1)) * 0.07;
+      const a = Math.max(0, Math.min(1, obj._alpha));
+      obj.sprite.setAlpha(a);
+      obj.label.setAlpha(a);
     }
   }
 
@@ -705,11 +817,12 @@ class IsoScene extends Phaser.Scene {
     if (this._emoPool)    for (const t of this._emoPool.values())    t.setVisible(false);
     if (this._bubblePool) for (const t of this._bubblePool.values()) t.setVisible(false);
 
-    // Interaction hearts between close characters
+    // Interaction hearts between close outdoor characters
     const chars = [...this._charObjs.values()];
     for (let i=0; i<chars.length; i++) {
       for (let j=i+1; j<chars.length; j++) {
         const a=chars[i], b=chars[j];
+        if ((a._alpha??1) < 0.4 || (b._alpha??1) < 0.4) continue; // skip indoor chars
         if (Math.hypot(a.px-b.px, a.py-b.py) < 60) {
           // Draw hearts as colored dots animated upward
           for (let k=0; k<3; k++) {
@@ -726,8 +839,57 @@ class IsoScene extends Phaser.Scene {
       }
     }
 
-    // Per-character: emotion icon + speech bubble
+    // Indoor name tags — shown above buildings for characters inside
+    if (!this._indoorTagPool) this._indoorTagPool = new Map();
+    for (const [, t] of this._indoorTagPool) t.setVisible(false);
+
+    // Group indoor (faded) chars by building
+    const byBuilding = new Map();
     for (const [id, obj] of this._charObjs) {
+      if (!obj.isIndoor || !obj.indoorBuilding || (obj._alpha ?? 1) > 0.35) continue;
+      const key = obj.indoorBuilding.label;
+      if (!byBuilding.has(key)) byBuilding.set(key, { b: obj.indoorBuilding, ids: [] });
+      byBuilding.get(key).ids.push(id);
+    }
+    for (const [, { b, ids }] of byBuilding) {
+      const bx  = isoX(b.c + b.cw * 0.5, b.r + b.rh * 0.5);
+      const byTop = isoY(b.c + b.cw * 0.5, b.r + b.rh * 0.5) - b.bh - 10;
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
+        const ch = _rs.chars.find(c => c.id === id);
+        if (!ch) continue;
+        const avatar = ch.avatar_emoji || (ch.character_type === 'pet' ? '🐾' : '👤');
+        const name   = ch.nickname || ch.name.split(' ')[0];
+        const tagY   = byTop - i * 12 + Math.sin(this._tick * 0.025 + id * 0.7) * 1.5;
+        let tag = this._indoorTagPool.get(id);
+        if (!tag) {
+          tag = this.add.text(0, 0, '', {
+            fontFamily:'monospace', fontSize:'7px', color:'#f0e0b8',
+            backgroundColor:'#2a140899', padding:{x:3,y:2}, resolution:2,
+          }).setOrigin(0.5, 1).setDepth(510000);
+          this._indoorTagPool.set(id, tag);
+        }
+        tag.setPosition(bx, tagY).setText(`${avatar} ${name}`).setVisible(true);
+      }
+    }
+
+    // Follow ring around selected character
+    if (this._followId) {
+      const fo = this._charObjs.get(this._followId);
+      if (fo) {
+        const pulse = 0.55 + Math.sin(this._tick * 0.06) * 0.2;
+        const rad   = 14  + Math.sin(this._tick * 0.04) * 2;
+        g.lineStyle(2.5, 0xffe040, pulse);
+        g.strokeCircle(fo.px, fo.py - 8, rad);
+        g.lineStyle(1.5, 0xffa000, pulse * 0.5);
+        g.strokeCircle(fo.px, fo.py - 8, rad + 5);
+      }
+    }
+
+    // Per-character: emotion icon + speech bubble (only when visible outdoors)
+    for (const [id, obj] of this._charObjs) {
+      const visibility = obj._alpha ?? 1;
+      if (visibility < 0.3) continue; // skip fully-indoor chars
       // Emotion icon
       const emo = _rs.emotions.get(id);
       if (emo) {
@@ -742,7 +904,7 @@ class IsoScene extends Phaser.Scene {
       if (bubble) {
         const age = this._tick - bubble.born;
         if (age > 250) { _rs.bubbles.delete(id); continue; }
-        const alpha = age<20 ? age/20 : age>220 ? (250-age)/30 : 1;
+        const alpha = (age<20 ? age/20 : age>220 ? (250-age)/30 : 1) * visibility;
         this._drawBubble(id, g, bubble.text, obj.px, obj.py-55, alpha);
       }
     }
@@ -809,6 +971,9 @@ class IsoScene extends Phaser.Scene {
     if (cur.trim()) lines.push(cur.trim());
     return lines.slice(0, 4);
   }
+
+  setFollow(charId) { this._followId = charId; }
+  clearFollow()     { this._followId = null;   }
 }
 
 // ─── Public renderer API (same interface as before) ───────────────────────────
@@ -864,5 +1029,15 @@ const renderer = {
   showSpeechBubble(text) {
     const el = document.getElementById('speech-bubble');
     if (el) { el.textContent=text; el.classList.remove('hidden'); clearTimeout(this._bt); this._bt=setTimeout(()=>el.classList.add('hidden'),5000); }
+  },
+
+  onBuildingClick:  null,
+  onCharacterClick: null,
+
+  followCharacter(charId) {
+    if (_rs._scene) _rs._scene.setFollow(charId);
+  },
+  unfollowCharacter() {
+    if (_rs._scene) _rs._scene.clearFollow();
   },
 };

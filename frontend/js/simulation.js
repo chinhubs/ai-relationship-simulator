@@ -16,6 +16,7 @@ class SimulationController {
   // ── Clock helpers ─────────────────────────────────────────────────────────
 
   _simTimeToMinutes(t) {
+    if (!t) return 8 * 60;
     const [h, m] = t.split(":").map(Number);
     return h * 60 + (m || 0);
   }
@@ -162,11 +163,17 @@ class SimulationController {
     const sd     = result.sim_day;
     const st     = result.sim_time;
 
-    this._startClockAnim(sd, result.next_sim_time);
+    // Only update the clock for the selected character (or any char if none selected)
+    // This prevents the clock jumping between different characters' sim times
+    if (result.next_sim_time && (!this.activeCharId || charId === this.activeCharId)) {
+      this._startClockAnim(sd, result.next_sim_time);
+    }
 
-    renderer.updateCharacterPosition(charId, result.location, result.activity);
-    renderer.setSimTime(result.next_sim_time);
-    renderer.updateEmotionState(charId, result.emotion_after);
+    try {
+      renderer.updateCharacterPosition(charId, result.location, result.activity);
+      renderer.setSimTime(result.next_sim_time);
+      renderer.updateEmotionState(charId, result.emotion_after);
+    } catch (e) { /* renderer errors must not break simulation or log */ }
 
     const _notableActions = ["respond_message","initiate_contact","confront","seek_comfort","vent","withdraw"];
     const hasEvents   = result.events_processed?.length > 0;
@@ -179,7 +186,7 @@ class SimulationController {
       ui.log(`${avatar} ${label} · ${result.activity} @ ${result.location}`, "event", sd, st);
     }
     if (result.message_to_send) {
-      renderer.showCharacterMessage(charId, result.message_to_send);
+      try { renderer.showCharacterMessage(charId, result.message_to_send); } catch(e) {}
       ui.log(`  💬 "${result.message_to_send}"`, "event", sd, st);
     }
     if (isNotable && result.decision) {
