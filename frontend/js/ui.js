@@ -35,67 +35,189 @@ const EMOTION_CONFIG = [
   { key: "energy",     label: "Energy ⚡",     cls: "bar-energy" },
 ];
 
-const BUILDING_ROOMS = {
-  house:      [
-    { label: '🛏 ห้องนอน',         kw: ['นอน','sleep','rest','bedroom','ตื่น','ฝัน','หลับ'] },
-    { label: '🛋 ห้องนั่งเล่น',    kw: ['ดูทีวี','นั่งเล่น','อ่าน','ผ่อน','tv','living','relax'] },
-    { label: '🚿 ห้องน้ำ',         kw: ['อาบน้ำ','ห้องน้ำ','shower','bath','แปรง'] },
-    { label: '🍳 ห้องครัว',        kw: ['ทำอาหาร','กินข้าว','ทานข้าว','ครัว','cook','kitchen','eat','กิน','ทาน'] },
-  ],
-  office:     [
-    { label: '💻 โต๊ะทำงาน',       kw: ['ทำงาน','work','email','พิมพ์','code','โค้ด','computer'] },
-    { label: '📊 ห้องประชุม',      kw: ['ประชุม','meeting','present','นำเสนอ','discuss'] },
-    { label: '☕ ห้องพัก',         kw: ['พัก','กาแฟ','coffee','break','lunch','กินข้าว'] },
-    { label: '🏢 ล็อบบี้',         kw: ['ล็อบบี้','lobby','รอ','wait','arrive'] },
-  ],
-  hospital:   [
-    { label: '🏥 ห้องตรวจ',        kw: ['ตรวจ','check','consult','หมอ','doctor','นพ'] },
-    { label: '💊 ฉุกเฉิน',         kw: ['ฉุกเฉิน','emergency','urgent','acute'] },
-    { label: '🛏 พักฟื้น',         kw: ['พัก','นอน','rest','recover','ward'] },
-    { label: '⚗️ ห้องแล็บ',        kw: ['เลือด','lab','test','เอกซเรย์','xray','scan'] },
-  ],
-  mall:       [
-    { label: '🛍 ร้านค้า',         kw: ['ซื้อ','buy','shop','เดินห้าง','ช้อปปิ้ง','เลือก'] },
-    { label: '🍽 ฟู้ดคอร์ท',       kw: ['กิน','ทาน','food','court','อาหาร','eat'] },
-    { label: '🎬 โรงหนัง',         kw: ['หนัง','movie','cinema','ภาพยนตร์'] },
-    { label: '🧴 ซูเปอร์มาร์เก็ต', kw: ['super','market','ซุปเปอร์','ของชำ','grocery'] },
-  ],
-  cafe:       [
-    { label: '☕ บาร์กาแฟ',        kw: ['กาแฟ','coffee','ชา','tea','สั่ง','order'] },
-    { label: '🪑 โซนนั่ง',         kw: ['นั่ง','sit','ทำงาน','อ่าน','meet','study'] },
-  ],
-  restaurant: [
-    { label: '🍜 โซนอาหาร',        kw: ['กิน','ทาน','eat','food','สั่ง','order','อาหาร'] },
-    { label: '🧑‍🍳 ครัว',          kw: ['ครัว','cook','prepare','เตรียม'] },
-    { label: '🏮 ห้อง VIP',        kw: ['vip','private','ส่วนตัว','จอง'] },
-  ],
-  gym:        [
-    { label: '🏋 ยกน้ำหนัก',       kw: ['ยก','lift','weight','กล้าม','strength'] },
-    { label: '🏃 ลู่วิ่ง',         kw: ['วิ่ง','run','cardio','เดิน','treadmill'] },
-    { label: '🧘 โยคะ/ยืดเส้น',    kw: ['โยคะ','yoga','stretch','pilates','ยืด'] },
-    { label: '🚿 ห้องอาบน้ำ',      kw: ['อาบ','shower','locker'] },
-  ],
-  bank:       [
-    { label: '💰 เคาน์เตอร์',      kw: ['ฝาก','ถอน','โอน','deposit','withdraw','transfer'] },
-    { label: '🏧 ATM',             kw: ['atm','กด','เครื่อง','machine'] },
-    { label: '📋 ห้องผู้จัดการ',   kw: ['ผู้จัดการ','สินเชื่อ','loan','manager','apply'] },
-  ],
-  store:      [
-    { label: '🛒 ร้านค้า',         kw: [] },
-    { label: '🧾 แคชเชียร์',       kw: ['จ่าย','pay','ชำระ','checkout'] },
-  ],
-  gas:        [
-    { label: '⛽ หัวจ่ายน้ำมัน',   kw: ['เติม','น้ำมัน','fuel','fill','gasoline'] },
-    { label: '🏪 มินิมาร์ท',       kw: ['ซื้อ','buy','ร้าน','สะดวก'] },
-  ],
-  bts:        [
-    { label: '🚉 ชานชาลา',         kw: ['รอ','รถไฟ','train','wait','platform'] },
-    { label: '🎫 จุดตั๋ว',         kw: ['ตั๋ว','ticket','บัตร','card','top-up'] },
-  ],
-  park:       [
-    { label: '🌳 สวนหย่อม',        kw: [] },
-    { label: '🪑 ม้านั่ง',         kw: ['นั่ง','sit','พัก','rest','relax'] },
-  ],
+const BUILDING_INTERIORS = {
+  house: {
+    grid: { cols:'2fr 1fr', areas:"'bed bath' 'living living' 'kitchen hall'" },
+    rooms: [
+      { id:'bed',     area:'bed',     label:'🛏 ห้องนอน',      bg:'#f0e0c8', border:'#c8a070',
+        kw:['นอน','sleep','rest','bedroom','ตื่น','หลับ','waking','getting ready','winding'],
+        items:['🛏','💡','🪴','📱','🧸','🛁'] },
+      { id:'bath',    area:'bath',    label:'🚿 ห้องน้ำ',       bg:'#d0edf8', border:'#80b8d0',
+        kw:['อาบน้ำ','ห้องน้ำ','shower','bath','แปรง'],
+        items:['🚿','🧼','🪞','🪥','🧴'] },
+      { id:'living',  area:'living',  label:'🛋 ห้องนั่งเล่น',  bg:'#fdf0d8', border:'#d0a860',
+        kw:['ดูทีวี','นั่งเล่น','ผ่อน','tv','relax','social','โทรศัพท์','อ่าน','chatting','phone','shows'],
+        items:['🛋','📺','☕','🪴','📚','🎮'] },
+      { id:'kitchen', area:'kitchen', label:'🍳 ห้องครัว',      bg:'#eef8d8', border:'#90b860',
+        kw:['ทำอาหาร','กินข้าว','ทานข้าว','ครัว','cook','eat','กิน','breakfast','lunch','dinner','meal','eating'],
+        items:['🍳','🥘','🧊','🍽','🫕','🥗'] },
+      { id:'hall',    area:'hall',    label:'🚪 ทางเข้า',       bg:'#e8e4df', border:'#b0a898',
+        kw:[],
+        items:['🚪','👟','🌿','🔑','🧹'] },
+    ]
+  },
+  office: {
+    grid: { cols:'1fr 1fr 1fr', areas:"'desk desk desk' 'meet meet bath' 'lounge lounge lounge'" },
+    rooms: [
+      { id:'desk',   area:'desk',   label:'💼 โซนทำงาน',      bg:'#e8eef8', border:'#8090c0',
+        kw:['ทำงาน','work','office','checking','arriving','wrapping','email','พิมพ์'],
+        items:['💻','📊','🖨','📝','📋','🖥'] },
+      { id:'meet',   area:'meet',   label:'🤝 ห้องประชุม',     bg:'#e0e8f8', border:'#8098c0',
+        kw:['ประชุม','meeting','present','discuss'],
+        items:['🤝','📊','🖥','💡','📌','🪑'] },
+      { id:'bath',   area:'bath',   label:'🚿 ห้องน้ำ',        bg:'#d0edf8', border:'#80b8d0',
+        kw:['ห้องน้ำ','bath'],
+        items:['🚿','🪥','🧼'] },
+      { id:'lounge', area:'lounge', label:'☕ พื้นที่พักผ่อน', bg:'#fdf5e8', border:'#c8a868',
+        kw:['lunch','break','พัก','ทาน','กิน','coffee','คุย'],
+        items:['🛋','☕','🥪','📱','🌿','🧃'] },
+    ]
+  },
+  cafe: {
+    grid: { cols:'3fr 2fr', areas:"'seat bar' 'seat menu'" },
+    rooms: [
+      { id:'seat', area:'seat', label:'☕ โซนนั่ง',       bg:'#fdf0e0', border:'#c89050',
+        kw:['cafe','คาเฟ่','นั่ง','coffee','ชา','work','relax','read','อ่าน','study'],
+        items:['☕','🪑','📖','🌿','🎵','🕯','💻'] },
+      { id:'bar',  area:'bar',  label:'🧾 บาร์',          bg:'#e8d0b0', border:'#a07838',
+        items:['☕','🧁','🥐','🍰','🫖','🧋'],    kw:['order','สั่ง','counter'] },
+      { id:'menu', area:'menu', label:'🍰 เบเกอรี่',      bg:'#f8e8d0', border:'#b88840',
+        kw:[],
+        items:['🍰','🧁','🥐','🍫','🍬','🍩'] },
+    ]
+  },
+  restaurant: {
+    grid: { cols:'3fr 2fr', areas:"'dining kitchen' 'dining kitchen'" },
+    rooms: [
+      { id:'dining',  area:'dining',  label:'🍽 โซนทานอาหาร', bg:'#fdf5e8', border:'#c89858',
+        kw:['eat','กิน','ทาน','dinner','lunch','meal','อาหาร','dining','restaurant'],
+        items:['🍽','🪑','🕯','🌹','🥂','🍷','🫕'] },
+      { id:'kitchen', area:'kitchen', label:'🍳 ห้องครัว',     bg:'#eef8d8', border:'#90b058',
+        kw:['cook','kitchen','ครัว'],
+        items:['🍳','🔪','🥘','🫕','👨‍🍳','🧑‍🍳','🥗'] },
+    ]
+  },
+  mall: {
+    grid: { cols:'1fr 1fr 1fr', areas:"'shop1 shop2 shop3' 'food food bath'" },
+    rooms: [
+      { id:'shop1', area:'shop1', label:'👗 เสื้อผ้า',         bg:'#f8e8f0', border:'#c070a0',
+        kw:['shopping','ช้อป','เสื้อผ้า','clothes','mall','hang'],
+        items:['👗','👠','👜','🪞','🛍','👒'] },
+      { id:'shop2', area:'shop2', label:'📱 อิเล็กทรอนิกส์',  bg:'#e8eef8', border:'#7080c0',
+        kw:['electronic','phone','มือถือ','gadget'],
+        items:['📱','💻','🎮','📺','🎧','🖥'] },
+      { id:'shop3', area:'shop3', label:'🎁 ของขวัญ',         bg:'#f8f0e0', border:'#b09040',
+        kw:['gift','ของขวัญ','toy','ของเล่น'],
+        items:['🎁','🧸','🪆','🎀','🪅','🎊'] },
+      { id:'food',  area:'food',  label:'🍜 ฟู้ดคอร์ต',        bg:'#fff0e0', border:'#c09040',
+        kw:['food','กิน','ทาน','eat','meal','lunch','dinner'],
+        items:['🍜','🍱','🥘','🧋','🍔','🍣','🥗'] },
+      { id:'bath',  area:'bath',  label:'🚿 ห้องน้ำ',           bg:'#d0edf8', border:'#80b8d0',
+        kw:['ห้องน้ำ','bath'],
+        items:['🚿','🪥','🧼'] },
+    ]
+  },
+  hospital: {
+    grid: { cols:'2fr 1fr 1fr', areas:"'ward ward exam' 'ward ward wait' 'lab pharm wait'" },
+    rooms: [
+      { id:'ward',  area:'ward',  label:'🏥 ห้องพักผู้ป่วย', bg:'#e8f5f8', border:'#70a8c0',
+        kw:['ward','พักฟื้น','rest','นอน','sleep','recover'],
+        items:['🛏','💊','🩺','💉','🩹','🌡','🌸'] },
+      { id:'exam',  area:'exam',  label:'🩺 ห้องตรวจ',        bg:'#f0f8e8', border:'#80b060',
+        kw:['ตรวจ','exam','doctor','หมอ','check','consult'],
+        items:['🩺','🩻','💊','📋','🩸','🔬'] },
+      { id:'wait',  area:'wait',  label:'🪑 ห้องรอ',          bg:'#f8f5e8', border:'#b8a860',
+        kw:['wait','รอ'],
+        items:['🪑','📰','☕','🌿','📱'] },
+      { id:'lab',   area:'lab',   label:'🔬 ห้องแล็บ',        bg:'#e8e8f8', border:'#8080c0',
+        kw:['lab','แล็บ','test','xray','scan'],
+        items:['🔬','🧪','📊','💡','🧫','🩻'] },
+      { id:'pharm', area:'pharm', label:'💊 ร้านยา',           bg:'#f0ffe8', border:'#70b050',
+        kw:['pharm','ยา','medicine','pharmacy'],
+        items:['💊','🩹','🧴','💉','🏥','🧃'] },
+    ]
+  },
+  park: {
+    grid: { cols:'2fr 1fr', areas:"'garden fountain' 'path path'" },
+    rooms: [
+      { id:'garden',   area:'garden',   label:'🌳 สวน',         bg:'#c8f0b8', border:'#58a038',
+        kw:['park','garden','walk','วิ่ง','นั่ง','relax','สวน','morning','tree','exercise'],
+        items:['🌳','🌺','🌸','🦋','🐦','🌿','🌻'] },
+      { id:'fountain', area:'fountain', label:'⛲ น้ำพุ',        bg:'#b8e0f8', border:'#5090c0',
+        kw:['fountain','pond','น้ำพุ'],
+        items:['⛲','🌊','🪷','🐟','🦆'] },
+      { id:'path',     area:'path',     label:'🚶 ทางเดิน',      bg:'#e0d8b8', border:'#988858',
+        kw:['walk','วิ่ง','jog','run','ออกกำลัง'],
+        items:['🚶','🏃','🛤','🌿','🌅','🐾'] },
+    ]
+  },
+  gym: {
+    grid: { cols:'2fr 1fr', areas:"'training locker' 'pool locker'" },
+    rooms: [
+      { id:'training', area:'training', label:'💪 โซนฟิตเนส',   bg:'#f0ede8', border:'#a09080',
+        kw:['gym','exercise','ออกกำลัง','workout','train','weight','fitness','lift'],
+        items:['💪','🏋','⚽','🏃','🥊','🎽','🏅'] },
+      { id:'pool',     area:'pool',     label:'🏊 สระว่ายน้ำ',  bg:'#b8e0f8', border:'#5090c0',
+        kw:['swim','pool','water','ว่าย'],
+        items:['🏊','🌊','🩴','🥽','🏖'] },
+      { id:'locker',   area:'locker',   label:'🚿 ล็อกเกอร์',   bg:'#d0edf8', border:'#80b8d0',
+        kw:['locker','shower','อาบน้ำ','ห้องน้ำ'],
+        items:['🚿','🧼','👟','🔐','🪒','🧴'] },
+    ]
+  },
+  bank: {
+    grid: { cols:'2fr 1fr', areas:"'counter vault' 'wait vault'" },
+    rooms: [
+      { id:'counter', area:'counter', label:'🏦 เคาน์เตอร์', bg:'#e8f0f8', border:'#7888b0',
+        kw:['bank','ธนาคาร','atm','counter','ฝาก','ถอน','transfer'],
+        items:['💳','💵','🖥','📋','🔒','🏦'] },
+      { id:'vault',   area:'vault',   label:'🔐 นิรภัย',     bg:'#d8d0e8', border:'#8878a8',
+        kw:['vault','safe'],
+        items:['🔐','💰','🔑','⚠','🛡'] },
+      { id:'wait',    area:'wait',    label:'🪑 โซนรอ',      bg:'#f0f0e8', border:'#a8a880',
+        kw:['wait','รอ'],
+        items:['🪑','📰','📲','🌿','☕'] },
+    ]
+  },
+  store: {
+    grid: { cols:'3fr 1fr', areas:"'shelf counter' 'shelf counter'" },
+    rooms: [
+      { id:'shelf',   area:'shelf',   label:'🛒 ชั้นสินค้า',  bg:'#f5f0e8', border:'#b0a060',
+        kw:['shop','ช้อป','ซื้อ','store','สินค้า','browse','7-eleven','seven','convenience'],
+        items:['🛒','📦','🥫','🧴','🥤','🍫','🍜'] },
+      { id:'counter', area:'counter', label:'🧾 เคาน์เตอร์', bg:'#e8f0d8', border:'#80a850',
+        kw:['pay','จ่าย','checkout'],
+        items:['🧾','💳','🛍','📦','💰'] },
+    ]
+  },
+  bts: {
+    grid: { cols:'3fr 1fr', areas:"'platform exit' 'train concourse'" },
+    rooms: [
+      { id:'platform', area:'platform', label:'🚇 ชานชาลา', bg:'#e0e8f8', border:'#6080c0',
+        kw:['bts','รถไฟ','สถานี','commute','station'],
+        items:['🚇','🚊','⚠','🔵','📍','🎫'] },
+      { id:'exit',     area:'exit',     label:'🚶 ทางออก',   bg:'#f0f0e0', border:'#a0a060',
+        kw:['exit'],
+        items:['🚶','🗺','📍','⬆','🏃'] },
+      { id:'train',    area:'train',    label:'🚃 ในขบวน',   bg:'#d8e4f8', border:'#5070b0',
+        kw:['train','transit','commut','bts'],
+        items:['🚃','💺','📱','🎧','🤸'] },
+      { id:'concourse',area:'concourse',label:'🏪 ร้านค้า',  bg:'#f5f0e8', border:'#a89860',
+        kw:['mall','coffee','ร้าน','shop'],
+        items:['🏪','☕','🧋','🍜','🛍'] },
+    ]
+  },
+  gas: {
+    grid: { cols:'2fr 1fr', areas:"'pump pump' 'mart mart'" },
+    rooms: [
+      { id:'pump', area:'pump', label:'⛽ หัวจ่ายน้ำมัน', bg:'#f5f0d8', border:'#c0a040',
+        kw:['เติม','น้ำมัน','fuel','fill','gasoline','pump'],
+        items:['⛽','🚗','🛻','🪣','🔋','🏎'] },
+      { id:'mart', area:'mart', label:'🏪 มินิมาร์ท',     bg:'#fff0e0', border:'#c09040',
+        kw:['ซื้อ','buy','ร้าน','สะดวก','convenience'],
+        items:['🏪','🥤','🍫','🧃','🛒','🍜'] },
+    ]
+  },
 };
 
 const ui = {
@@ -408,46 +530,66 @@ const ui = {
   },
 
   showLocationDetail(building, chars) {
-    const rooms = BUILDING_ROOMS[building.type] || [{ label: '📍 ภายใน', kw: [] }];
+    const interior = BUILDING_INTERIORS[building.type];
+    if (!interior) {
+      // Minimal fallback for unknown building types
+      const charList = chars.length
+        ? chars.map(ch => {
+            const av = ch.avatar_emoji || (ch.character_type==='pet'?'🐾':(ch.gender==='female'?'👩':'👨'));
+            return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border)">
+              <span style="font-size:18px">${av}</span>
+              <div><div style="font-size:10px;font-weight:bold">${ch.nickname||ch.name}</div>
+              <div class="muted" style="font-size:9px">${ch.activity}</div></div></div>`;
+          }).join('')
+        : '<p class="muted" style="font-size:10px">ไม่มีตัวละครอยู่ภายใน</p>';
+      this.showModal(`<h2 style="color:var(--accent);margin-bottom:8px">${building.label}</h2>${charList}`);
+      return;
+    }
 
-    // Assign each character to the best matching room by activity keywords
-    const buckets = rooms.map(() => []);
+    // Assign each character to the best matching room
+    const buckets = {};
+    interior.rooms.forEach(r => { buckets[r.id] = []; });
+    const defaultRoom = interior.rooms[0];
+
     for (const ch of chars) {
       const act = (ch.activity || '').toLowerCase();
       let placed = false;
-      for (let ri = 1; ri < rooms.length; ri++) {
-        if (rooms[ri].kw.some(k => act.includes(k))) {
-          buckets[ri].push(ch); placed = true; break;
+      for (let ri = 1; ri < interior.rooms.length; ri++) {
+        if (interior.rooms[ri].kw.some(k => act.includes(k))) {
+          buckets[interior.rooms[ri].id].push(ch);
+          placed = true; break;
         }
       }
-      if (!placed) buckets[0].push(ch);
+      if (!placed) buckets[defaultRoom.id].push(ch);
     }
 
-    const roomCards = rooms.map((room, ri) => {
-      const occupants = buckets[ri];
-      const charHtml = occupants.map(ch => {
-        const emoIcon = this._dominantEmoIcon(ch.emotions);
+    const roomsHtml = interior.rooms.map(room => {
+      const occupants = buckets[room.id] || [];
+      const furnitureHtml = room.items.map(f => `<span class="fp-item">${f}</span>`).join('');
+      const charsHtml = occupants.map(ch => {
+        const avatar = ch.avatar_emoji || (ch.character_type==='pet'?'🐾':(ch.gender==='female'?'👩':'👨'));
         const name = ch.nickname || ch.name;
-        const avatar = ch.avatar_emoji || (ch.character_type==='pet' ? '🐾' : (ch.gender==='female'?'👩':'👨'));
-        return `<div class="room-char">
-          <span class="room-char-avatar">${avatar}</span>
-          <div class="room-char-info">
-            <div class="room-char-name">${name} ${emoIcon}</div>
-            <div class="room-char-act muted">${ch.activity}</div>
-          </div>
-          <button class="btn-sim btn-blue" style="padding:2px 7px;font-size:9px;min-width:0;flex-shrink:0" onclick="ui.followCharacter(${ch.id});ui.closeModal()">🎯</button>
+        const emo = this._dominantEmoIcon(ch.emotions);
+        return `<div class="fp-char" onclick="ui.followCharacter(${ch.id});ui.closeModal()" title="Follow ${name}">
+          <span class="fp-char-avatar">${avatar}</span>
+          <div><div class="fp-char-name">${name} ${emo}</div>
+          <div class="fp-char-act">${ch.activity}</div></div>
         </div>`;
       }).join('');
-      return `<div class="indoor-room${occupants.length ? ' occupied' : ''}">
-        <div class="indoor-room-label">${room.label}${occupants.length ? ` <span class="room-count">${occupants.length}</span>` : ''}</div>
-        ${charHtml || '<div class="muted" style="font-size:10px;padding:3px 0">ว่าง</div>'}
+      const countBadge = occupants.length ? ` <span class="room-count">${occupants.length}</span>` : '';
+      return `<div class="fp-room" style="grid-area:${room.area};background:${room.bg};border-color:${room.border}">
+        <div class="fp-room-label">${room.label}${countBadge}</div>
+        <div class="fp-furniture">${furnitureHtml}</div>
+        ${charsHtml ? `<div class="fp-chars">${charsHtml}</div>` : ''}
       </div>`;
     }).join('');
 
     this.showModal(`
       <h2 style="color:var(--accent);margin-bottom:4px">${building.label}</h2>
-      <p class="muted" style="margin-bottom:10px;font-size:11px">ภายในสถานที่ (${chars.length} คน)</p>
-      <div class="indoor-grid">${roomCards}</div>
+      <p class="muted" style="margin-bottom:8px;font-size:11px">ภายในสถานที่ · ${chars.length} คน</p>
+      <div class="floor-plan" style="grid-template-columns:${interior.grid.cols};grid-template-areas:${interior.grid.areas}">
+        ${roomsHtml}
+      </div>
     `);
   },
 
