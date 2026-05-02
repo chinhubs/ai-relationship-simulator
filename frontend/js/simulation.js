@@ -25,6 +25,19 @@ class SimulationController {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
   }
 
+  _formatClockText(day, totalMin) {
+    const h   = Math.floor(totalMin / 60) % 24;
+    const m   = Math.floor(totalMin % 60);
+    const t   = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")} น.`;
+    const DOW = ["อา.","จ.","อ.","พ.","พฤ.","ศ.","ส."];
+    const dow = DOW[(day - 1) % 7];
+    const period = (h >= 5 && h < 12) ? "🌅 เช้า"
+                 : (h >= 12 && h < 18) ? "☀️ บ่าย"
+                 : (h >= 18 && h < 22) ? "🌆 เย็น"
+                 : "🌙 ดึก";
+    return `วันที่ ${day} · ${dow} · ${period} · ${t}`;
+  }
+
   _startClockAnim(simDay, nextSimTime) {
     if (this._clockAnim) clearInterval(this._clockAnim);
     const startReal   = Date.now();
@@ -35,8 +48,10 @@ class SimulationController {
       let totalMin  = startMin + elapsed * simMinPerMs;
       let day       = simDay;
       if (totalMin >= 1440) { totalMin -= 1440; day++; }
-      ui.updateClock(`วันที่ ${day} · ${this._minutesToSimTime(totalMin)}`);
+      ui.updateClock(this._formatClockText(day, totalMin));
     }, 1000);
+    // Show immediately without waiting 1s
+    ui.updateClock(this._formatClockText(simDay, startMin));
   }
 
   setActiveCharacter(charId) {
@@ -143,36 +158,37 @@ class SimulationController {
     const char   = chars.find(c => c.id === charId);
     const label  = char ? (char.nickname || char.name) : `#${charId}`;
     const avatar = char ? (char.avatar_emoji || (char.gender === "female" ? "👩" : char.gender === "male" ? "👨" : "👤")) : "👤";
+    const sd     = result.sim_day;
+    const st     = result.sim_time;
 
-    // Fix clock: use next_sim_time and start smooth interpolation
-    this._startClockAnim(result.sim_day, result.next_sim_time);
+    this._startClockAnim(sd, result.next_sim_time);
 
     renderer.updateCharacterPosition(charId, result.location, result.activity);
     renderer.setSimTime(result.next_sim_time);
-    ui.log(`[${label}] ${result.activity} @ ${result.location}`, "tick");
 
-    // Add to structured daily timeline
+    ui.log(`${avatar} ${label}  ${result.activity} @ ${result.location}`, "tick", sd, st);
+
     ui.addDailyLogEntry({
-      simDay:    result.sim_day,
-      simTime:   result.sim_time,
+      simDay:   sd,
+      simTime:  st,
       charId,
-      charName:  label,
+      charName: label,
       avatar,
-      activity:  result.activity,
-      location:  result.location,
-      decision:  result.decision || null,
+      activity: result.activity,
+      location: result.location,
+      decision: result.decision || null,
     });
 
     if (result.message_to_send) {
       renderer.showSpeechBubble(result.message_to_send);
-      ui.log(`  💬 "${result.message_to_send}"`, "event");
+      ui.log(`  💬 "${result.message_to_send}"`, "event", sd, st);
     }
     if (result.decision) {
-      ui.log(`  ➤ ${result.decision}`, "tick");
+      ui.log(`  ➤ ${result.decision}`, "tick", sd, st);
     }
     if (result.events_processed?.length) {
       for (const ev of result.events_processed) {
-        ui.log(`  ⚡ ${ev.substring(0, 80)}`, "event");
+        ui.log(`  ⚡ ${ev.substring(0, 80)}`, "event", sd, st);
       }
     }
   }

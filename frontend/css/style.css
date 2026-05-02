@@ -48,7 +48,7 @@ html, body {
   text-shadow: 1px 1px 0 #2a1408;
 }
 .logo-pixel { font-size: 20px; }
-#sim-clock  { font-size: 13px; color: #ffd080; margin-right: 8px; font-weight: bold; }
+#sim-clock  { font-size: 12px; color: #ffd080; margin-right: 8px; font-weight: bold; letter-spacing: 0.5px; white-space: nowrap; }
 
 /* ── Main Layout ──────────────────────────────────────────────────────────── */
 #main-layout {
@@ -215,7 +215,13 @@ aside {
 .log-entry.event { border-left-color: var(--accent-2); color: var(--text); }
 .log-entry.tick  { border-left-color: var(--accent); }
 .log-entry.error { border-left-color: var(--red); color: var(--red); }
-.log-entry .ts   { color: var(--text-muted); margin-right: 6px; }
+.log-entry .ts        { margin-right: 6px; font-size: 10px; }
+.log-entry .real-ts   { color: var(--text-muted); }
+.log-entry .sim-ts    {
+  color: var(--accent); font-weight: bold;
+  background: rgba(122,82,48,0.1); border-radius: 3px;
+  padding: 1px 4px;
+}
 
 /* ── Daily Timeline ───────────────────────────────────────────────────────── */
 #daily-timeline { display: flex; flex-direction: column; gap: 2px; }

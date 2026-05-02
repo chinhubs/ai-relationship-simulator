@@ -52,16 +52,37 @@ const ui = {
         </div>
         ${e.decision ? `<div class="tl-decision">➤ ${e.decision}</div>` : ""}
       `).join("");
-      return `<div class="tl-day-group"><div class="tl-day-header">วันที่ ${day}</div>${rows}</div>`;
+      const dow = this._DOW[(parseInt(day) - 1) % 7];
+      const DOW_FULL = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
+      const dowFull  = DOW_FULL[(parseInt(day) - 1) % 7];
+      return `<div class="tl-day-group"><div class="tl-day-header">วันที่ ${day} · ${dowFull}</div>${rows}</div>`;
     }).join("");
   },
 
-  log(message, type = "default") {
+  _DOW: ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."],
+
+  _simPeriod(h) {
+    if (h >= 5  && h < 12) return "🌅";
+    if (h >= 12 && h < 18) return "☀️";
+    if (h >= 18 && h < 22) return "🌆";
+    return "🌙";
+  },
+
+  log(message, type = "default", simDay = null, simTime = null) {
     const container = document.getElementById("log-entries");
     const entry = document.createElement("div");
     entry.className = `log-entry ${type}`;
-    const ts = new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    entry.innerHTML = `<span class="ts">${ts}</span>${message}`;
+    let tsHtml;
+    if (simDay != null && simTime) {
+      const dow    = this._DOW[(simDay - 1) % 7];
+      const h      = parseInt(simTime.split(":")[0], 10);
+      const period = this._simPeriod(h);
+      tsHtml = `<span class="ts sim-ts">${period}D${simDay}·${dow} ${simTime}</span>`;
+    } else {
+      const ts = new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+      tsHtml = `<span class="ts real-ts">${ts}</span>`;
+    }
+    entry.innerHTML = `${tsHtml}${message}`;
     container.prepend(entry);
     if (container.children.length > 100) container.lastChild.remove();
   },
