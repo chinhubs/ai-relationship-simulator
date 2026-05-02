@@ -24,11 +24,11 @@ const EMOTION_CONFIG = [
 ];
 
 const ui = {
-  _dailyLog: [], // [{simDay, simTime, charId, charName, avatar, activity, location, decision}]
+  _dailyLog: [], // [{simDay, simTime, charId, charName, avatar, activity, location, decision, isNotable, notableReason, events, actionType}]
 
   addDailyLogEntry(entry) {
     this._dailyLog.unshift(entry); // newest first
-    if (this._dailyLog.length > 200) this._dailyLog.pop();
+    if (this._dailyLog.length > 400) this._dailyLog.pop();
     this._renderDailyTimeline();
   },
 
@@ -41,20 +41,32 @@ const ui = {
       byDay[e.simDay].push(e);
     }
     const days = Object.keys(byDay).sort((a, b) => b - a);
+    const DOW_FULL = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
     container.innerHTML = days.map(day => {
-      const rows = byDay[day].map(e => `
-        <div class="tl-entry">
-          <span class="tl-time">${e.simTime}</span>
-          <span class="tl-avatar">${e.avatar}</span>
-          <span class="tl-name">${e.charName}</span>
-          <span class="tl-dot">·</span>
-          <span class="tl-act">${e.activity} @ ${e.location}</span>
-        </div>
-        ${e.decision ? `<div class="tl-decision">➤ ${e.decision}</div>` : ""}
-      `).join("");
-      const dow = this._DOW[(parseInt(day) - 1) % 7];
-      const DOW_FULL = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
-      const dowFull  = DOW_FULL[(parseInt(day) - 1) % 7];
+      // Sort entries within the day ascending by sim_time (06:00 first, 23:00 last)
+      const sorted = [...byDay[day]].sort((a, b) => a.simTime.localeCompare(b.simTime));
+      const rows = sorted.map(e => {
+        const notableClass = e.isNotable ? " notable" : "";
+        const notableBadge = e.isNotable && e.notableReason
+          ? `<span class="tl-notable-badge">${e.notableReason}</span>`
+          : "";
+        const eventsRow = (e.events && e.events.length > 0)
+          ? `<div class="tl-events">${e.events.join(" · ")}</div>`
+          : "";
+        return `
+          <div class="tl-entry${notableClass}">
+            <span class="tl-time">${e.simTime}</span>
+            <span class="tl-avatar">${e.avatar}</span>
+            <span class="tl-name">${e.charName}</span>
+            <span class="tl-dot">·</span>
+            <span class="tl-act">${e.activity} @ ${e.location}</span>
+            ${notableBadge}
+          </div>
+          ${e.decision ? `<div class="tl-decision">➤ ${e.decision}</div>` : ""}
+          ${eventsRow}
+        `;
+      }).join("");
+      const dowFull = DOW_FULL[(parseInt(day) - 1) % 7];
       return `<div class="tl-day-group"><div class="tl-day-header">วันที่ ${day} · ${dowFull}</div>${rows}</div>`;
     }).join("");
   },

@@ -25,6 +25,9 @@ async def init_db():
             "ALTER TABLE characters ADD COLUMN relationship_status TEXT DEFAULT 'single'",
             "ALTER TABLE characters ADD COLUMN partner_id INTEGER REFERENCES characters(id)",
             "ALTER TABLE characters ADD COLUMN profile_extra TEXT DEFAULT '{}'",
+            "ALTER TABLE simulation_ticks ADD COLUMN is_notable INTEGER DEFAULT 0",
+            "ALTER TABLE simulation_ticks ADD COLUMN notable_reason TEXT",
+            "ALTER TABLE simulation_ticks ADD COLUMN action_type TEXT",
         ]:
             try:
                 await conn.execute(text(stmt))

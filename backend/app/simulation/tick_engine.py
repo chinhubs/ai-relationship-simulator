@@ -25,6 +25,39 @@ from ..simulation.daily_routine import get_routine_slot, is_weekend, advance_tim
 from ..simulation.event_processor import process_events_for_tick
 
 
+_NOTABLE_ACTION_TYPES = {
+    "respond_message", "initiate_contact", "confront",
+    "seek_comfort", "vent", "withdraw",
+}
+
+
+def _determine_notable(
+    decision_result: dict,
+    event_descriptions: list,
+    ai_delta_raw: dict,
+) -> tuple[bool, str | None]:
+    """Return (is_notable, reason_string) for a tick."""
+    reasons = []
+
+    if event_descriptions:
+        reasons.append("⚡ มีเหตุการณ์")
+
+    action_type = decision_result.get("action_type", "ignore")
+    if action_type in _NOTABLE_ACTION_TYPES:
+        reasons.append(f"💬 {action_type}")
+
+    max_delta = max((abs(float(v)) for v in ai_delta_raw.values()), default=0.0)
+    if max_delta >= 12:
+        reasons.append(f"😤 กระทบจิตใจ ±{round(max_delta)}")
+
+    if decision_result.get("memory_to_store"):
+        reasons.append("🧠 จดจำ")
+
+    if reasons:
+        return True, " · ".join(reasons)
+    return False, None
+
+
 async def _get_state(db: AsyncSession, character_id: int) -> CharacterState | None:
     result = await db.execute(
         select(CharacterState).where(CharacterState.character_id == character_id)
@@ -178,6 +211,7 @@ async def run_tick(
         db.add(snapshot)
 
     # 11. Record tick log
+    is_notable, notable_reason = _determine_notable(decision_result, event_descriptions, ai_delta_raw)
     tick_log = SimulationTick(
         character_id=character_id,
         tick_number=tick_number,
@@ -189,6 +223,9 @@ async def run_tick(
         internal_monologue=decision_result.get("internal_monologue"),
         emotion_delta={k: float(ai_delta_raw.get(k, 0)) for k in EMOTION_KEYS},
         events_processed=[e[:200] for e in event_descriptions],
+        action_type=action_type,
+        is_notable=is_notable,
+        notable_reason=notable_reason,
     )
     db.add(tick_log)
 

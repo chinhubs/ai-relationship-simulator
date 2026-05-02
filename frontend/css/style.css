@@ -247,6 +247,21 @@ aside {
   font-size: 10px; color: var(--text-muted); margin-left: 43px;
   font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.tl-entry.notable {
+  border-left-color: var(--yellow);
+  background: rgba(212,168,32,0.10);
+}
+.tl-notable-badge {
+  font-size: 9px; color: #b08010;
+  background: rgba(212,168,32,0.18);
+  border-radius: 3px; padding: 1px 5px;
+  margin-left: 4px; white-space: nowrap;
+}
+.tl-events {
+  font-size: 9px; color: var(--accent-2);
+  margin-left: 43px; margin-top: 1px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 /* ── Modal ────────────────────────────────────────────────────────────────── */
 #modal-overlay {

@@ -195,6 +195,60 @@ async def generate_daily_diary(character_id: int, db: AsyncSession = Depends(get
     return {"sim_day": state.sim_day, "diary": diary_text}
 
 
+DOW_FULL = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์"]
+
+
+@router.get("/{character_id}/daily-log")
+async def get_daily_log(
+    character_id: int,
+    limit_days: int = 7,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return tick history grouped by sim_day (newest first), limited to limit_days days."""
+    result = await db.execute(
+        select(SimulationTick)
+        .where(SimulationTick.character_id == character_id)
+        .order_by(desc(SimulationTick.sim_day), SimulationTick.sim_time)
+    )
+    all_ticks = list(result.scalars().all())
+
+    # Group by sim_day
+    days_map: dict[int, list] = {}
+    for tick in all_ticks:
+        days_map.setdefault(tick.sim_day, []).append(tick)
+
+    # Take only the limit_days most-recent days
+    sorted_days = sorted(days_map.keys(), reverse=True)[:limit_days]
+
+    days_out = []
+    for day in sorted_days:
+        ticks = days_map[day]
+        # Sort ticks ascending by sim_time within the day
+        ticks.sort(key=lambda t: t.sim_time)
+        notable_count = sum(1 for t in ticks if t.is_notable)
+        day_label = f"วันที่ {day} · {DOW_FULL[(day - 1) % 7]}"
+        days_out.append({
+            "sim_day": day,
+            "day_label": day_label,
+            "highlight_count": notable_count,
+            "ticks": [
+                {
+                    "sim_time": t.sim_time,
+                    "activity": t.activity,
+                    "location": t.location,
+                    "decision_made": t.decision_made,
+                    "is_notable": t.is_notable,
+                    "notable_reason": t.notable_reason,
+                    "events_processed": t.events_processed or [],
+                    "action_type": t.action_type,
+                }
+                for t in ticks
+            ],
+        })
+
+    return days_out
+
+
 @router.get("/{character_id}/diary", response_model=list[DiaryEntryRead])
 async def get_diary_entries(character_id: int, limit: int = 10, db: AsyncSession = Depends(get_db)):
     result = await db.execute(

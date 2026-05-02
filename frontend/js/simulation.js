@@ -10,6 +10,7 @@ class SimulationController {
     this.tickIdx = 0;
     this.AUTO_TICK_MS = 8000; // 8 วิ = 1 ชั่วโมง sim
     this._clockAnim = null;
+    this._loggedChars = new Set();
   }
 
   // ── Clock helpers ─────────────────────────────────────────────────────────
@@ -169,14 +170,18 @@ class SimulationController {
     ui.log(`${avatar} ${label}  ${result.activity} @ ${result.location}`, "tick", sd, st);
 
     ui.addDailyLogEntry({
-      simDay:   sd,
-      simTime:  st,
+      simDay:        sd,
+      simTime:       st,
       charId,
-      charName: label,
+      charName:      label,
       avatar,
-      activity: result.activity,
-      location: result.location,
-      decision: result.decision || null,
+      activity:      result.activity,
+      location:      result.location,
+      decision:      result.decision || null,
+      isNotable:     !!(result.events_processed?.length || (result.action_type && ["respond_message","initiate_contact","confront","seek_comfort","vent","withdraw"].includes(result.action_type))),
+      notableReason: null,
+      events:        result.events_processed || [],
+      actionType:    result.action_type || null,
     });
 
     if (result.message_to_send) {
@@ -193,6 +198,49 @@ class SimulationController {
     }
   }
 
+  // ── Load historical daily log from DB for a character (first time only) ──
+
+  async refreshDailyLog(charId) {
+    try {
+      const days = await API.getDailyLog(charId);
+      const chars = app.characters || [];
+      const char = chars.find(c => c.id === charId);
+      const label = char ? (char.nickname || char.name) : `#${charId}`;
+      const avatar = char
+        ? (char.avatar_emoji || (char.gender === "female" ? "👩" : char.gender === "male" ? "👨" : "👤"))
+        : "👤";
+
+      // Deduplicate: collect existing keys from _dailyLog
+      const existing = new Set(
+        ui._dailyLog.map(e => `${e.charId}:${e.simDay}:${e.simTime}`)
+      );
+
+      // days are newest-first; iterate reversed so oldest goes in first (unshift keeps newest first)
+      const reversed = [...days].reverse();
+      for (const day of reversed) {
+        for (const tick of day.ticks) {
+          const key = `${charId}:${day.sim_day}:${tick.sim_time}`;
+          if (existing.has(key)) continue;
+          existing.add(key);
+          ui.addDailyLogEntry({
+            simDay:        day.sim_day,
+            simTime:       tick.sim_time,
+            charId,
+            charName:      label,
+            avatar,
+            activity:      tick.activity,
+            location:      tick.location,
+            decision:      tick.decision_made || null,
+            isNotable:     tick.is_notable,
+            notableReason: tick.notable_reason || null,
+            events:        tick.events_processed || [],
+            actionType:    tick.action_type || null,
+          });
+        }
+      }
+    } catch (e) { /* not critical — historical log is best-effort */ }
+  }
+
   // ── State refresh for the selected character ──────────────────────────────
 
   async refreshState() {
@@ -207,6 +255,12 @@ class SimulationController {
       ui.renderCharacterStateInfo(state, char);
       ui.renderRelationships(rels, app.characters || []);
     } catch (e) { /* not critical */ }
+
+    // Load historical log on first select of this character
+    if (!this._loggedChars.has(this.activeCharId)) {
+      this._loggedChars.add(this.activeCharId);
+      await this.refreshDailyLog(this.activeCharId);
+    }
   }
 
   // ── Called after characters load — auto-start world if not yet running ────

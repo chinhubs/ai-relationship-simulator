@@ -125,6 +125,9 @@ class SimulationTickRead(BaseModel):
     decision_made: str | None
     internal_monologue: str | None
     emotion_delta: dict
+    is_notable: bool = False
+    notable_reason: str | None = None
+    action_type: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

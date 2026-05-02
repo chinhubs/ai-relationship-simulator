@@ -37,6 +37,7 @@ const API = {
   getMemories: (id, layer = null)    => apiCall("GET",  `/simulation/${id}/memories${layer ? `?layer=${layer}` : ""}`),
   generateDiary: (id)                => apiCall("POST", `/simulation/${id}/diary`),
   getDiary: (id)                     => apiCall("GET",  `/simulation/${id}/diary`),
+  getDailyLog: (id, limitDays = 7)   => apiCall("GET",  `/simulation/${id}/daily-log?limit_days=${limitDays}`),
 
   // Events
   injectEvent:  (data)  => apiCall("POST",   "/events", data),

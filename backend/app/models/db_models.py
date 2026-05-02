@@ -194,6 +194,9 @@ class SimulationTick(Base):
     emotion_delta: Mapped[dict] = mapped_column(JSON, default=dict)
     events_processed: Mapped[list] = mapped_column(JSON, default=list)
     token_usage: Mapped[dict] = mapped_column(JSON, default=dict)
+    is_notable: Mapped[bool] = mapped_column(Boolean, default=False)
+    notable_reason: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    action_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
