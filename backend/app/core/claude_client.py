@@ -6,12 +6,12 @@ from .config import settings
 
 logger = logging.getLogger(__name__)
 
-# Ordered by preference: best quality → most universally available
+# Ordered by preference: best value → cheapest fallback (confirmed available)
 _MODEL_FALLBACK = [
-    "gpt-4o-mini",
-    "gpt-4.1-mini",
-    "gpt-3.5-turbo",
-    "gpt-3.5-turbo-0125",
+    "gpt-4.1-mini-2025-04-14",   # best value: capable + cheap
+    "gpt-5-nano",                  # newer nano, good for short decisions
+    "gpt-4.1-nano-2025-04-14",    # cheapest capable option
+    "gpt-3.5-turbo-16k",           # reliable last resort
 ]
 
 _client: openai.AsyncOpenAI | None = None
