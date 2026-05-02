@@ -817,7 +817,7 @@ class IsoScene extends Phaser.Scene {
         x=x0; y=y0; angle=Math.atan2(y1-y0, x1-x0)*180/Math.PI;
       }
       car.sprite.setPosition(x, y).setAngle(angle);
-      car.sprite.setDepth(y * 100 + 300);
+      car.sprite.setDepth(Math.round((y - OY) * 2000 / TH) + 300);
     }
   }
 
