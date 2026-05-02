@@ -455,6 +455,7 @@ const ui = {
     document.getElementById("modal-content").innerHTML = html;
     const overlay = document.getElementById("modal-overlay");
     overlay.classList.remove("hidden");
+    if (typeof renderer !== 'undefined') renderer._modalOpen = true;
     // Delegate likert button clicks — attach once only to avoid listener accumulation
     if (!overlay._likertBound) {
       overlay._likertBound = true;
@@ -470,6 +471,10 @@ const ui = {
 
   closeModal() {
     document.getElementById("modal-overlay").classList.add("hidden");
+    if (typeof renderer !== 'undefined') {
+      renderer._modalOpen = false;
+      renderer._modalJustClosed = Date.now();
+    }
   },
 
   showEditCharacterForm(char) {

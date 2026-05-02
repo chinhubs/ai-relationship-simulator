@@ -658,6 +658,7 @@ class IsoScene extends Phaser.Scene {
       .on('pointerout',  () => txt.setStyle({ color: '#f8e8b0' }))
       .on('pointerup', () => {
         if (this._didDrag) return;
+        if (renderer._modalOpen || Date.now() - (renderer._modalJustClosed || 0) < 200) return;
         const charsHere = _rs.chars.filter(ch => {
           const m = _rs.moves.get(ch.id);
           return m && b.keys.length > 0 && b.keys.some(k => (m.locStr||'').toLowerCase().includes(k));
@@ -841,7 +842,10 @@ class IsoScene extends Phaser.Scene {
         const spr= this.add.image(startX + i*10, startY, texKey).setOrigin(0.5, 0.95);
         spr.setDepth(Math.round((startY - OY) * 2000 / TH) + 200);
         spr.setInteractive({ useHandCursor: true })
-          .on('pointerup', () => { if (!this._didDrag && renderer.onCharacterClick) renderer.onCharacterClick(ch.id); });
+          .on('pointerup', () => {
+            if (this._didDrag || renderer._modalOpen || Date.now() - (renderer._modalJustClosed || 0) < 200) return;
+            if (renderer.onCharacterClick) renderer.onCharacterClick(ch.id);
+          });
         const lbl = this.add.text(startX+i*10, startY-30, ch.nickname||ch.name.split(' ')[0], {
           fontFamily:'monospace', fontSize:'9px', color:'#f8e898',
           stroke:'#1a0a04', strokeThickness:3, resolution:2,
