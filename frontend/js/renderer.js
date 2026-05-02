@@ -1199,6 +1199,93 @@ const INDOOR_LAYOUTS = {
   ]},
 };
 
+// ─── Ambient NPC definitions per building type ────────────────────────────────
+// ni = npc texture index (0-5), roomId = room.id to place them in
+// color = role label colour (staff blue / manager gold / visitor gray)
+const INDOOR_NPCS = {
+  house: [
+    { role:'👥 ผู้อยู่อาศัย', roomId:'dflt', ni:3, color:'#d8d8c8' },
+  ],
+  office: [
+    { role:'💼 พนักงาน',   roomId:'work', ni:1, color:'#a8d8f8' },
+    { role:'💼 พนักงาน',   roomId:'work', ni:3, color:'#a8d8f8' },
+    { role:'💼 พนักงาน',   roomId:'work', ni:5, color:'#a8d8f8' },
+    { role:'📋 หัวหน้า',   roomId:'conf', ni:0, color:'#f8e090' },
+    { role:'📋 ผู้จัดการ',  roomId:'conf', ni:4, color:'#f8e090' },
+    { role:'🗂 เลขา',     roomId:'lobb', ni:2, color:'#a8d8f8' },
+  ],
+  cafe: [
+    { role:'☕ บาริสต้า',  roomId:'cbar', ni:0, color:'#f8e090' },
+    { role:'☕ บาริสต้า',  roomId:'cbar', ni:4, color:'#f8e090' },
+    { role:'🍽 เสิร์ฟ',   roomId:'seat', ni:2, color:'#a8d8f8' },
+    { role:'🪑 ลูกค้า',   roomId:'seat', ni:3, color:'#d8d8c8' },
+    { role:'🪑 ลูกค้า',   roomId:'seat', ni:5, color:'#d8d8c8' },
+  ],
+  restaurant: [
+    { role:'👨‍🍳 พ่อครัว',  roomId:'kchi', ni:0, color:'#f0f0a0' },
+    { role:'👨‍🍳 เชฟ',     roomId:'kchi', ni:2, color:'#f0f0a0' },
+    { role:'🍜 เสิร์ฟ',   roomId:'dine', ni:1, color:'#a8d8f8' },
+    { role:'🍜 เสิร์ฟ',   roomId:'dine', ni:4, color:'#a8d8f8' },
+    { role:'🪑 ลูกค้า',   roomId:'dine', ni:3, color:'#d8d8c8' },
+    { role:'🪑 ลูกค้า',   roomId:'dine', ni:5, color:'#d8d8c8' },
+  ],
+  mall: [
+    { role:'👗 พนักงาน',   roomId:'fash', ni:1, color:'#a8d8f8' },
+    { role:'👗 พนักงาน',   roomId:'fash', ni:3, color:'#a8d8f8' },
+    { role:'🍔 พนักงาน',   roomId:'food', ni:0, color:'#a8d8f8' },
+    { role:'🎮 พนักงาน',   roomId:'ent',  ni:2, color:'#a8d8f8' },
+    { role:'🛒 นักช้อป',   roomId:'hall', ni:4, color:'#d8d8c8' },
+    { role:'🛒 นักช้อป',   roomId:'hall', ni:5, color:'#d8d8c8' },
+    { role:'🛒 นักช้อป',   roomId:'hall', ni:3, color:'#d8d8c8' },
+  ],
+  hospital: [
+    { role:'🩺 แพทย์',    roomId:'ward', ni:0, color:'#90f0c0' },
+    { role:'🩺 แพทย์',    roomId:'ward', ni:2, color:'#90f0c0' },
+    { role:'💉 พยาบาล',   roomId:'ward', ni:4, color:'#a8d8f8' },
+    { role:'💉 พยาบาล',   roomId:'wait', ni:1, color:'#a8d8f8' },
+    { role:'🪑 ผู้ป่วย',   roomId:'wait', ni:3, color:'#d8d8c8' },
+    { role:'🪑 ผู้ป่วย',   roomId:'wait', ni:5, color:'#d8d8c8' },
+  ],
+  bank: [
+    { role:'💰 พนักงาน',  roomId:'bnkc', ni:0, color:'#a8d8f8' },
+    { role:'💰 พนักงาน',  roomId:'bnkc', ni:2, color:'#a8d8f8' },
+    { role:'🛡 รปภ.',     roomId:'bnkc', ni:4, color:'#f8e090' },
+    { role:'🪑 ลูกค้า',   roomId:'bnkc', ni:3, color:'#d8d8c8' },
+    { role:'🪑 ลูกค้า',   roomId:'bnkc', ni:5, color:'#d8d8c8' },
+  ],
+  gym: [
+    { role:'💪 เทรนเนอร์', roomId:'flor', ni:1, color:'#f8e090' },
+    { role:'🏋 สมาชิก',    roomId:'flor', ni:3, color:'#d8d8c8' },
+    { role:'🏋 สมาชิก',    roomId:'flor', ni:5, color:'#d8d8c8' },
+    { role:'🚿 สมาชิก',    roomId:'lckr', ni:0, color:'#d8d8c8' },
+  ],
+  park: [
+    { role:'🌳 เจ้าหน้าที่', roomId:'grdn', ni:0, color:'#f8e090' },
+    { role:'🌿 คนออกกำลัง', roomId:'grdn', ni:2, color:'#d8d8c8' },
+    { role:'🌿 คนออกกำลัง', roomId:'grdn', ni:4, color:'#d8d8c8' },
+    { role:'🪑 คนพักผ่อน',  roomId:'grdn', ni:5, color:'#d8d8c8' },
+  ],
+  bts: [
+    { role:'🎫 เจ้าหน้าที่', roomId:'plat', ni:0, color:'#f8e090' },
+    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:1, color:'#d8d8c8' },
+    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:3, color:'#d8d8c8' },
+    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:4, color:'#d8d8c8' },
+    { role:'🚇 ผู้โดยสาร',  roomId:'plat', ni:5, color:'#d8d8c8' },
+  ],
+  store: [
+    { role:'🏪 แคชเชียร์', roomId:'stor', ni:0, color:'#f8e090' },
+    { role:'📦 พนักงาน',   roomId:'stor', ni:2, color:'#a8d8f8' },
+    { role:'🛒 ลูกค้า',    roomId:'stor', ni:3, color:'#d8d8c8' },
+    { role:'🛒 ลูกค้า',    roomId:'stor', ni:5, color:'#d8d8c8' },
+  ],
+  gas: [
+    { role:'⛽ พนักงานปั๊ม', roomId:'pump', ni:0, color:'#f8e090' },
+    { role:'⛽ พนักงานปั๊ม', roomId:'pump', ni:2, color:'#f8e090' },
+    { role:'🚗 ลูกค้า',     roomId:'pump', ni:4, color:'#d8d8c8' },
+    { role:'🚗 ลูกค้า',     roomId:'pump', ni:5, color:'#d8d8c8' },
+  ],
+};
+
 // ─── Indoor Phaser Scene ──────────────────────────────────────────────────────
 class IndoorScene extends Phaser.Scene {
   constructor() { super({ key: 'IndoorScene' }); }
@@ -1215,6 +1302,7 @@ class IndoorScene extends Phaser.Scene {
 
     this.add.rectangle(400, 225, 800, 450, layout.bg).setDepth(0);
     for (const room of layout.rooms) this._drawRoom(room);
+    this._spawnAmbientNPCs(layout);
     this._spawnChars(layout);
     this._drawHeader(layout.title);
   }
@@ -1426,6 +1514,32 @@ class IndoorScene extends Phaser.Scene {
     }
   }
 
+  _spawnAmbientNPCs(layout) {
+    const defs = INDOOR_NPCS[this._bldg?.type] || [];
+    for (const def of defs) {
+      const room = layout.rooms.find(r => r.id === def.roomId);
+      if (!room) continue;
+      const m = 32;
+      const px = room.x + m + Math.random() * (room.w - m * 2);
+      const py = room.y + m + Math.random() * (room.h - m * 2 - 10);
+      const ni  = def.ni % 6;
+      const spr = this.add.image(px, py, `npc_${ni}_r`)
+        .setOrigin(0.5, 0.95).setScale(2).setDepth(100 + py);
+      const nlbl = this.add.text(px, py - 28, def.role, {
+        fontFamily:'monospace', fontSize:'7px', color: def.color,
+        stroke:'#1a0a04', strokeThickness:2, resolution:2,
+      }).setOrigin(0.5, 1).setDepth(102 + py);
+      const walker = {
+        spr, nlbl, albl:null, px, py, tx:px, ty:py,
+        room, ci:ni, gd:'m', isPet:false, isNpc:true,
+        facingRight: Math.random() > 0.5,
+        waitTimer: Math.random() * 30,
+      };
+      this._walkers.push(walker);
+      this._pickTarget(walker);
+    }
+  }
+
   _spawnChars(layout) {
     const margin = 30;
     const roomCounts = {};
@@ -1516,6 +1630,8 @@ class IndoorScene extends Phaser.Scene {
       w.px += dx * LERP; w.py += dy * LERP;
       if (w.isPet) {
         w.spr.setTexture(`pet_${w.ci}_${w.facingRight?'r':'l'}`);
+      } else if (w.isNpc) {
+        w.spr.setTexture(`npc_${w.ci}_${w.facingRight?'r':'l'}`);
       } else {
         w.spr.setTexture(`char_${w.ci}_${w.facingRight?'r':'l'}_${w.gd}`);
       }
