@@ -783,7 +783,7 @@ class IsoScene extends Phaser.Scene {
         npc.sprite.setTexture(`npc_${i}_${npc.facingRight?'r':'l'}`);
       }
       npc.sprite.setPosition(npc.px, npc.py);
-      npc.sprite.setDepth(npc.py * 100 + 50);
+      npc.sprite.setDepth(Math.round((npc.py - OY) * 2000 / TH) + 50);
       // Fade in/out for indoor/outdoor transitions
       const tA = npc.isIndoor ? 0 : 1;
       npc._alpha = npc._alpha + (tA - npc._alpha) * 0.07;
@@ -839,13 +839,13 @@ class IsoScene extends Phaser.Scene {
         const isPet = ch.character_type === 'pet';
         const texKey = isPet ? `pet_${ci}_r` : `char_${ci}_r_${g}`;
         const spr= this.add.image(startX + i*10, startY, texKey).setOrigin(0.5, 0.95);
-        spr.setDepth(startY*100+200);
+        spr.setDepth(Math.round((startY - OY) * 2000 / TH) + 200);
         spr.setInteractive({ useHandCursor: true })
           .on('pointerup', () => { if (!this._didDrag && renderer.onCharacterClick) renderer.onCharacterClick(ch.id); });
         const lbl = this.add.text(startX+i*10, startY-30, ch.nickname||ch.name.split(' ')[0], {
           fontFamily:'monospace', fontSize:'9px', color:'#f8e898',
           stroke:'#1a0a04', strokeThickness:3, resolution:2,
-        }).setOrigin(0.5,1).setDepth(startY*100+201);
+        }).setOrigin(0.5,1).setDepth(Math.round((startY - OY) * 2000 / TH) + 201);
         this._charObjs.set(ch.id, {
           sprite:spr, label:lbl, px:startX+i*10, py:startY,
           tx:startX+i*10, ty:startY, ci, g,
@@ -908,8 +908,8 @@ class IsoScene extends Phaser.Scene {
       obj.px += dx*LERP; obj.py += dy*LERP;
       obj.sprite.setPosition(obj.px, obj.py);
       obj.label.setPosition(obj.px, obj.py-28);
-      obj.sprite.setDepth(obj.py*100+200);
-      obj.label.setDepth(obj.py*100+201);
+      obj.sprite.setDepth(Math.round((obj.py - OY) * 2000 / TH) + 200);
+      obj.label.setDepth(Math.round((obj.py - OY) * 2000 / TH) + 201);
       // Facing
       const ch = _rs.chars.find(c=>c.id===id);
       const isPet = ch?.character_type === 'pet';

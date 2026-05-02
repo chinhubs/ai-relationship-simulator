@@ -1,10 +1,20 @@
 # AI Relationship Simulator
 
-> **v1.5.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
+> **v1.6.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
 
 A web-based simulation platform where you create psychologically-accurate AI personas, run them through a daily life simulation, and observe how they feel, decide, and form relationships over time — all inside a living, animated pixel art world.
 
 ---
+
+## What's New in v1.6.0
+
+- **Correct Isometric Depth** — characters and NPCs now use the same depth formula as buildings (`(py − OY) × 2000 / TH`), so they properly appear behind or in front of buildings instead of floating on rooftops
+- **NPC Corridor Routing** — background NPCs navigate via four dedicated sidewalk corridors (c6, c8, r5, r7) with junction waypoints; they no longer cut diagonally through buildings
+- **Type-Aware Daily Schedule** — pets follow a home-only 24-hour schedule (`PET_SCHEDULE`); grandparents follow a retirement schedule (`GRANDPARENT_SCHEDULE`); AI behavioral rules prevent pets from commuting, working, or leaving home
+- **Scene Camera Controls** — mouse wheel to zoom (0.75×–2.5×), drag to pan, double-click to reset to default view
+- **Building Room Detail** — click any building label to open a room-grid popup: rooms are shown with which characters are currently inside and their activity, matched by keyword
+- **Character-on-Car** — characters whose activity involves driving/commuting ride the animated car sprite; a floating `🚗 name` tag follows the car
+- **Profile Save Fixed** — edit form now shows pet-specific fields (species, breed, energy, temperament…) for pet characters and human fields for everyone else; switching character type dynamically re-renders the section; `flag_modified` ensures SQLAlchemy always persists JSON profile data; pet profile form now refreshes in-memory character list after saving
 
 ## What's New in v1.5.0
 
@@ -176,6 +186,15 @@ ai-relationship-simulator/
 ---
 
 ## Changelog
+
+### v1.6.0 — Depth Fix + Camera Controls + Profile Save + NPC Routing + Pet Schedules
+- Isometric depth formula unified for characters, NPCs, and buildings — no more rooftop floating
+- NPC sidewalk corridor routing via four dedicated corridors and junction waypoints
+- Type-aware daily schedules: `PET_SCHEDULE` (home-only), `GRANDPARENT_SCHEDULE`, plus AI behavioral rules per character type
+- Camera: mouse-wheel zoom, drag pan, double-click reset
+- Building room detail popup: keyword-matched character-to-room assignment in a 2-column grid
+- Character-on-car: sprite rides animated car, floating name tag follows
+- Profile form: pet fields shown for pets, human fields for others, dynamic section switch on type change, `flag_modified` ensures JSON saves, pet form reloads character list after save
 
 ### v1.5.0 — Indoor/Outdoor System + Follow + Pet Overhaul + Responsive
 - Indoor/outdoor character visibility: sprites fade into buildings, floating name tags appear above; click building label to see who's inside

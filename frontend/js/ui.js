@@ -503,7 +503,7 @@ const ui = {
         <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px">❤️ คู่รัก / แฟน</label>
         <select class="input-field" id="e-partner">${partnerOptions}</select>
         <input class="input-field" id="e-emoji" value="${char.avatar_emoji || ""}" placeholder="Avatar emoji เช่น 👩 🐶" maxlength="2" />
-        ${this._profileExtraFields("e", char.profile_extra || {})}
+        <div id="e-profile-section">${charType === 'pet' ? this._petProfileFields("e", char.profile_extra || {}) : this._profileExtraFields("e", char.profile_extra || {})}</div>
         <button type="submit" class="btn-primary btn-full" style="margin-top:8px">💾 บันทึก</button>
       </form>
     `);
@@ -512,6 +512,7 @@ const ui = {
       e.preventDefault();
       try {
         const partnerVal = document.getElementById("e-partner").value;
+        const selectedType = document.getElementById("e-char-type").value;
         const payload = {
           name:                document.getElementById("e-name").value,
           nickname:            document.getElementById("e-nickname").value   || null,
@@ -520,8 +521,8 @@ const ui = {
           gender:              document.getElementById("e-gender").value,
           relationship_status: document.getElementById("e-rel-status")?.value || "single",
           avatar_emoji:        document.getElementById("e-emoji").value      || null,
-          character_type:      document.getElementById("e-char-type").value,
-          profile_extra:       this._collectProfileExtra("e"),
+          character_type:      selectedType,
+          profile_extra:       selectedType === 'pet' ? this._collectPetExtra("e") : this._collectProfileExtra("e"),
         };
         if (partnerVal) {
           payload.partner_id = parseInt(partnerVal);
@@ -624,6 +625,7 @@ const ui = {
         await API.updateCharacter(char.id, { profile_extra: extra });
         ui.closeModal();
         ui.log(`🐾 บันทึกโปรไฟล์ ${name} สำเร็จ`, 'event');
+        await app.loadCharacters();
       } catch (err) {
         btn.disabled = false; btn.textContent = '🐾 บันทึกโปรไฟล์';
         ui.log(`Error: ${err.message}`, 'error');
@@ -807,6 +809,7 @@ const ui = {
   _setupCharTypeForm(prefix) {
     const typeEl = document.getElementById(`${prefix}-char-type`);
     if (!typeEl) return;
+    let _ready = false;
     const apply = () => {
       const cfg = CHAR_TYPE_CONFIG[typeEl.value] || CHAR_TYPE_CONFIG.human;
       const ageEl = document.getElementById(`${prefix}-age`);
@@ -819,9 +822,19 @@ const ui = {
       if (genderRow) genderRow.innerHTML = cfg.isPet
         ? `<select class="input-field" id="${prefix}-gender"><option value="male">เพศผู้ ♂</option><option value="female">เพศเมีย ♀</option><option value="unspecified">ไม่ทราบเพศ</option></select>`
         : `<select class="input-field" id="${prefix}-gender"><option value="unspecified">เพศ (ไม่ระบุ)</option><option value="male">ชาย 👨</option><option value="female">หญิง 👩</option></select>`;
+      // Switch profile section only when user changes type (not on initial render)
+      if (_ready) {
+        const profileSection = document.getElementById(`${prefix}-profile-section`);
+        if (profileSection) {
+          profileSection.innerHTML = cfg.isPet
+            ? this._petProfileFields(prefix, {})
+            : this._profileExtraFields(prefix, {});
+        }
+      }
     };
     typeEl.addEventListener("change", apply);
     apply();
+    _ready = true;
   },
 
   showAddCharacterForm() {
@@ -848,7 +861,7 @@ const ui = {
           <option value="widowed">ม่าย 🖤</option>
         </select></div>
         <input class="input-field" id="f-emoji" placeholder="Avatar emoji เช่น 👩 🐶" maxlength="2" />
-        ${this._profileExtraFields("f")}
+        <div id="f-profile-section">${this._profileExtraFields("f")}</div>
         <button type="submit" class="btn-primary btn-full" style="margin-top:8px">สร้างตัวละคร</button>
       </form>
     `);
@@ -856,6 +869,7 @@ const ui = {
     document.getElementById("form-add-char").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
+        const selectedType = document.getElementById("f-char-type").value;
         const char = await API.createCharacter({
           name:                document.getElementById("f-name").value,
           nickname:            document.getElementById("f-nickname").value || null,
@@ -864,8 +878,8 @@ const ui = {
           gender:              document.getElementById("f-gender").value,
           relationship_status: document.getElementById("f-rel-status")?.value || "single",
           avatar_emoji:        document.getElementById("f-emoji").value || null,
-          character_type:      document.getElementById("f-char-type").value,
-          profile_extra:       this._collectProfileExtra("f"),
+          character_type:      selectedType,
+          profile_extra:       selectedType === 'pet' ? this._collectPetExtra("f") : this._collectProfileExtra("f"),
         });
         ui.closeModal();
         ui.log(`Created character: ${char.name}`, "event");

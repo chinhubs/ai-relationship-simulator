@@ -2,6 +2,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm.attributes import flag_modified
 
 from ...core.database import get_db
 from ...models.db_models import Character, PersonaProfile, CharacterState, SimulationStatus
@@ -83,6 +84,9 @@ async def update_character(character_id: int, data: CharacterUpdate, db: AsyncSe
 
     for field, value in update_data.items():
         setattr(char, field, value)
+
+    if 'profile_extra' in update_data:
+        flag_modified(char, 'profile_extra')
 
     await db.commit()
     await db.refresh(char)
