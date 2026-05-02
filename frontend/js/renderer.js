@@ -88,10 +88,37 @@ const NPC_WPS = [
   [2,5],[4,5],[9,5],[11,5],[13,5],[2,7],[4,7],[9,7],
 ];
 
-// Indoor waypoints NPCs can visit (building interiors) — triggers fade-out
+// Indoor waypoints: each has the building interior point and a safe sidewalk approach node
 const NPC_INDOOR_WPS = [
-  [1, 1], [4, 4], [10, 1], [4, 9], [4, 11], [11, 10], [10, 5],
+  { wp:[1,1],   app:[6,1]  },   // house[0]
+  { wp:[4,4],   app:[6,5]  },   // house[3]
+  { wp:[10,1],  app:[8,1]  },   // office
+  { wp:[4,9],   app:[6,8]  },   // cafe
+  { wp:[4,11],  app:[6,10] },   // restaurant
+  { wp:[11,10], app:[8,10] },   // mall
+  { wp:[10,5],  app:[8,5]  },   // hospital
 ];
+
+// ─── NPC path routing — route through sidewalk corridors to avoid clipping buildings ───
+function _npcCorr(wp) {
+  if (!wp) return null;
+  if (wp[0] === 6) return 'c6';
+  if (wp[0] === 8) return 'c8';
+  if (wp[1] === 5) return 'r5';
+  if (wp[1] === 7) return 'r7';
+  return null;
+}
+const _NPC_JUNCTIONS = {
+  'c6,r5':[6,5],'r5,c6':[6,5],'c6,r7':[6,7],'r7,c6':[6,7],
+  'c8,r5':[8,5],'r5,c8':[8,5],'c8,r7':[8,7],'r7,c8':[8,7],
+  'c6,c8':[6,5],'c8,c6':[8,5],'r5,r7':[6,5],'r7,r5':[6,7],
+};
+function _npcPathTo(fromWp, toWp) {
+  const fc = _npcCorr(fromWp), tc = _npcCorr(toWp);
+  if (!fc || !tc || fc === tc) return [toWp];
+  const j = _NPC_JUNCTIONS[`${fc},${tc}`];
+  return j ? [j, toWp] : [toWp];
+}
 
 // ─── Car definitions ──────────────────────────────────────────────────────────
 const CAR_COLORS = [
@@ -705,7 +732,11 @@ class IsoScene extends Phaser.Scene {
       const px = isoX(wp[0], wp[1]), py = isoY(wp[0], wp[1]);
       const sprite = this.add.image(px, py, `npc_${i}_r`).setOrigin(0.5, 0.95);
       sprite.setDepth(isoDepth(wp[0], wp[1], 50));
-      this._npcs.push({ sprite, px, py, tx:px, ty:py, wait:40*i, facingRight:true, def:NPC_DEFS[i], wpIdx:i, isIndoor:false, _alpha:1 });
+      this._npcs.push({
+        sprite, px, py, tx:px, ty:py, wait:40*i, facingRight:true,
+        def:NPC_DEFS[i], wpIdx:i, isIndoor:false, _alpha:1,
+        path:[], lastWp:wp, destIsIndoor:false,
+      });
     }
   }
 
@@ -715,16 +746,35 @@ class IsoScene extends Phaser.Scene {
       if (npc.wait > 0) { npc.wait -= delta/16; continue; }
       const dx=npc.tx-npc.px, dy=npc.ty-npc.py, dist=Math.hypot(dx,dy);
       if (dist < 2) {
-        npc.wait = 80 + Math.random()*120;
-        if (Math.random() < 0.25) {
-          // 25% chance NPC enters a building (fades out)
-          const wp = NPC_INDOOR_WPS[Math.random()*NPC_INDOOR_WPS.length|0];
-          npc.tx = isoX(wp[0],wp[1]); npc.ty = isoY(wp[0],wp[1]);
-          npc.isIndoor = true;
+        if (npc.path.length > 0) {
+          // Continue along queued path waypoints
+          const next = npc.path[0];
+          npc.path = npc.path.slice(1);
+          npc.tx = isoX(next[0], next[1]); npc.ty = isoY(next[0], next[1]);
+          npc.lastWp = next;
+          if (npc.path.length === 0 && npc.destIsIndoor) npc.isIndoor = true;
         } else {
-          const wp = NPC_WPS[Math.random()*NPC_WPS.length|0];
-          npc.tx = isoX(wp[0],wp[1]); npc.ty = isoY(wp[0],wp[1]);
-          npc.isIndoor = false;
+          // Pick a new destination
+          npc.wait = 80 + Math.random() * 120;
+          let route;
+          if (Math.random() < 0.25) {
+            // Head to a building interior (fade out on arrival)
+            const entry = NPC_INDOOR_WPS[Math.random() * NPC_INDOOR_WPS.length | 0];
+            const via = _npcPathTo(npc.lastWp, entry.app);
+            route = [...via, entry.wp];
+            npc.destIsIndoor = true;
+            npc.isIndoor = false;
+          } else {
+            const wp = NPC_WPS[Math.random() * NPC_WPS.length | 0];
+            route = _npcPathTo(npc.lastWp, wp);
+            npc.destIsIndoor = false;
+            npc.isIndoor = false;
+          }
+          const first = route[0];
+          npc.path = route.slice(1);
+          npc.tx = isoX(first[0], first[1]); npc.ty = isoY(first[0], first[1]);
+          npc.lastWp = first;
+          if (npc.path.length === 0 && npc.destIsIndoor) npc.isIndoor = true;
         }
       } else {
         if (Math.abs(dx)>1) npc.facingRight = dx>0;

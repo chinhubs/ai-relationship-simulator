@@ -70,8 +70,68 @@ WEEKEND_SCHEDULE: list[RoutineSlot] = [
 ]
 
 
-def get_routine_slot(sim_time: str, is_weekend: bool = False) -> RoutineSlot:
-    schedule = WEEKEND_SCHEDULE if is_weekend else DAILY_SCHEDULE
+PET_SCHEDULE: list[RoutineSlot] = [
+    RoutineSlot("00:00", "sleeping soundly in their spot", "home (bedroom)", -0.3),
+    RoutineSlot("01:00", "sleeping", "home (bedroom)", -0.3),
+    RoutineSlot("02:00", "sleeping", "home (bedroom)", -0.3),
+    RoutineSlot("03:00", "sleeping", "home (bedroom)", -0.3),
+    RoutineSlot("04:00", "sleeping", "home (bedroom)", -0.3),
+    RoutineSlot("05:00", "waking up early, stretching and grooming", "home", 1.5),
+    RoutineSlot("06:00", "exploring the house and looking out the window", "home (living room)", 2.0),
+    RoutineSlot("07:00", "waiting eagerly for breakfast", "home (kitchen)", 2.0),
+    RoutineSlot("08:00", "eating breakfast", "home (kitchen)", 3.0),
+    RoutineSlot("09:00", "playing with toys", "home (living room)", 3.0),
+    RoutineSlot("10:00", "sunbathing by the window", "home (living room)", 1.5),
+    RoutineSlot("11:00", "mid-morning nap", "home (bedroom)", -0.3),
+    RoutineSlot("12:00", "napping", "home (bedroom)", -0.3),
+    RoutineSlot("13:00", "grooming after nap", "home", 1.5),
+    RoutineSlot("14:00", "exploring and playing around the house", "home (living room)", 2.0),
+    RoutineSlot("15:00", "watching birds and people from the window", "home (living room)", 1.0),
+    RoutineSlot("16:00", "waiting near the door for owner to return", "home", 3.0),
+    RoutineSlot("17:00", "playing with owner after they return home", "home", 5.0, social=True),
+    RoutineSlot("18:00", "eating dinner", "home (kitchen)", 3.0),
+    RoutineSlot("19:00", "cuddling and relaxing with owner", "home (living room)", 3.5, social=True),
+    RoutineSlot("20:00", "evening play or grooming session", "home (living room)", 2.0, social=True),
+    RoutineSlot("21:00", "settling down for the night", "home (bedroom)", 0.5),
+    RoutineSlot("22:00", "sleeping", "home (bedroom)", -0.3),
+    RoutineSlot("23:00", "sleeping", "home (bedroom)", -0.3),
+]
+
+GRANDPARENT_SCHEDULE: list[RoutineSlot] = [
+    RoutineSlot("00:00", "sleeping", "home (bedroom)", -0.5),
+    RoutineSlot("01:00", "sleeping", "home (bedroom)", -0.5),
+    RoutineSlot("02:00", "sleeping", "home (bedroom)", -0.5),
+    RoutineSlot("03:00", "sleeping", "home (bedroom)", -0.5),
+    RoutineSlot("04:00", "sleeping", "home (bedroom)", -0.5),
+    RoutineSlot("05:00", "waking up early, morning prayers or meditation", "home", 2.0),
+    RoutineSlot("06:00", "morning walk in the park", "park", 3.0),
+    RoutineSlot("07:00", "breakfast and morning routines", "home", 3.0),
+    RoutineSlot("08:00", "reading newspaper or watching morning news", "home (living room)", 1.5),
+    RoutineSlot("09:00", "light household chores or tending to plants", "home", 2.0),
+    RoutineSlot("10:00", "resting and watching TV", "home (living room)", 2.0),
+    RoutineSlot("11:00", "preparing or waiting for lunch", "home (kitchen)", 2.0),
+    RoutineSlot("12:00", "lunch", "home (kitchen)", 3.0, social=True),
+    RoutineSlot("13:00", "afternoon nap", "home (bedroom)", -0.3),
+    RoutineSlot("14:00", "afternoon nap", "home (bedroom)", -0.3),
+    RoutineSlot("15:00", "afternoon tea and resting", "home (living room)", 2.0),
+    RoutineSlot("16:00", "watching TV or chatting with family", "home (living room)", 2.0, social=True),
+    RoutineSlot("17:00", "light dinner preparations", "home (kitchen)", 2.0),
+    RoutineSlot("18:00", "dinner with family", "home", 4.0, social=True),
+    RoutineSlot("19:00", "relaxing and watching evening programs", "home (living room)", 2.0),
+    RoutineSlot("20:00", "winding down, light reading or TV", "home", 1.5),
+    RoutineSlot("21:00", "getting ready for sleep", "home (bedroom)", 0.5),
+    RoutineSlot("22:00", "sleeping", "home (bedroom)", -0.5),
+    RoutineSlot("23:00", "sleeping", "home (bedroom)", -0.5),
+]
+
+
+def get_routine_slot(sim_time: str, is_weekend: bool = False, char_type: str = "human") -> RoutineSlot:
+    if char_type == "pet":
+        schedule = PET_SCHEDULE
+    elif char_type == "grandparent":
+        schedule = GRANDPARENT_SCHEDULE
+    else:
+        schedule = WEEKEND_SCHEDULE if is_weekend else DAILY_SCHEDULE
     hour = int(sim_time.split(":")[0])
     for slot in reversed(schedule):
         slot_hour = int(slot.start.split(":")[0])

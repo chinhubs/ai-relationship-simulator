@@ -31,22 +31,45 @@ def build_persona_system_prompt(character: Character, profile: PersonaProfile) -
 
     pe = character.profile_extra or {}
     extra_sections = []
-    if pe.get("daily_routine"):
-        extra_sections.append(f"═══ DAILY ROUTINE ═══\n{pe['daily_routine']}")
-    if pe.get("work_details"):
-        extra_sections.append(f"═══ WORK LIFE ═══\n{pe['work_details']}")
-    if pe.get("hobbies"):
-        extra_sections.append(f"═══ HOBBIES & INTERESTS ═══\n{pe['hobbies']}")
-    if pe.get("leisure"):
-        extra_sections.append(f"═══ FREE TIME ═══\n{pe['leisure']}")
-    if pe.get("education"):
-        extra_sections.append(f"Education: {pe['education']}")
-    if pe.get("hometown"):
-        extra_sections.append(f"Hometown: {pe['hometown']}")
-    if pe.get("living_situation"):
-        extra_sections.append(f"Living situation: {pe['living_situation']}")
-    if pe.get("personality_notes"):
-        extra_sections.append(f"═══ ADDITIONAL CHARACTER NOTES ═══\n{pe['personality_notes']}")
+
+    if char_type == "pet":
+        # Pet profile fields — critical for accurate AI behavior
+        pet_lines = []
+        for key, label in [
+            ("species",          "Species"),
+            ("breed",            "Breed"),
+            ("energy_level",     "Energy level"),
+            ("temperament",      "Temperament"),
+            ("likes",            "Likes / enjoys"),
+            ("fears",            "Fears / dislikes"),
+            ("training_level",   "Training level"),
+            ("owner_bond",       "Bond with owner"),
+            ("personality_notes","Special behaviors"),
+        ]:
+            val = pe.get(key)
+            if val:
+                pet_lines.append(f"{label}: {val}")
+        if pet_lines:
+            extra_sections.append("═══ PET PROFILE ═══\n" + "\n".join(pet_lines))
+    else:
+        # Human profile extra fields
+        if pe.get("daily_routine"):
+            extra_sections.append(f"═══ DAILY ROUTINE ═══\n{pe['daily_routine']}")
+        if pe.get("work_details"):
+            extra_sections.append(f"═══ WORK LIFE ═══\n{pe['work_details']}")
+        if pe.get("hobbies"):
+            extra_sections.append(f"═══ HOBBIES & INTERESTS ═══\n{pe['hobbies']}")
+        if pe.get("leisure"):
+            extra_sections.append(f"═══ FREE TIME ═══\n{pe['leisure']}")
+        if pe.get("education"):
+            extra_sections.append(f"Education: {pe['education']}")
+        if pe.get("hometown"):
+            extra_sections.append(f"Hometown: {pe['hometown']}")
+        if pe.get("living_situation"):
+            extra_sections.append(f"Living situation: {pe['living_situation']}")
+        if pe.get("personality_notes"):
+            extra_sections.append(f"═══ ADDITIONAL CHARACTER NOTES ═══\n{pe['personality_notes']}")
+
     extra_block = "\n\n".join(extra_sections)
 
     attachment = profile.attachment_style
@@ -61,6 +84,34 @@ def build_persona_system_prompt(character: Character, profile: PersonaProfile) -
     boundaries = ", ".join(profile.boundaries.get("traits", []))
 
     feedback_rules: list[str] = []
+
+    # Type-specific hard behavioral constraints
+    if char_type == "pet":
+        feedback_rules += [
+            "You are a domestic pet — you NEVER leave home on your own, ever.",
+            "Your entire world is the home and the people/animals inside it.",
+            "Your 'decisions' are animal instincts and behaviors, NOT human plans or rational thoughts.",
+            "You do NOT commute, work, shop, or travel independently — those are human activities.",
+            "Your activities: sleeping, eating, playing, grooming, watching, cuddling, waiting, exploring the home.",
+        ]
+        if pe.get("energy_level") == "สูงมาก":
+            feedback_rules.append("You are hyperactive — you constantly demand attention, run around, and get into mischief.")
+        elif pe.get("energy_level") == "ต่ำ":
+            feedback_rules.append("You are very low-energy — you sleep and rest most of the day.")
+        if pe.get("temperament") == "ขี้กลัวระวังตัว":
+            feedback_rules.append("You are timid — you hide from loud noises, strangers, and anything unfamiliar.")
+        elif pe.get("temperament") == "ชอบคนชอบสังคม":
+            feedback_rules.append("You are very social — you follow your owner everywhere and hate being alone.")
+        elif pe.get("temperament") == "เจ้าอารมณ์ซน":
+            feedback_rules.append("You are mischievous — you knock things over, steal food, and ignore rules.")
+        elif pe.get("temperament") == "เงียบขรึมอิสระ":
+            feedback_rules.append("You are independent and aloof — you come and go on your own terms.")
+    elif char_type == "grandparent":
+        feedback_rules += [
+            "You are elderly — you move slowly, tire easily, and prioritize rest and family.",
+            "You rarely go far from home; most of your day is spent at home or nearby (park, temple).",
+            "You cherish family time and worry about the health and wellbeing of your loved ones.",
+        ]
 
     type_block = f"\n═══ CHARACTER ROLE ═══\n{type_context}\n" if type_context else ""
 

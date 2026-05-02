@@ -86,7 +86,12 @@ async def run_tick(
     sim_time = state.current_sim_time
     weekend = is_weekend(sim_day)
 
-    routine = get_routine_slot(sim_time, is_weekend=weekend)
+    # Fetch character once — used for type-aware routine and dialogue
+    _char_res = await db.execute(select(Character).where(Character.id == character_id))
+    _char = _char_res.scalar_one_or_none()
+    char_type = (_char.character_type or "human") if _char else "human"
+
+    routine = get_routine_slot(sim_time, is_weekend=weekend, char_type=char_type)
     state.current_location = routine.location
     state.current_activity = routine.activity
 
@@ -157,10 +162,7 @@ async def run_tick(
     tone = "neutral"
     if decision_result.get("message_to_send") and related_character_id:
         from ..brain.dialogue_engine import generate_message
-        result = await db.execute(
-            select(Character).where(Character.id == character_id)
-        )
-        char = result.scalar_one_or_none()
+        char = _char  # already fetched above
         sender_name = (char.nickname or char.name) if char else "Character"
 
         rel = await get_or_create_relationship(db, character_id, related_character_id)
