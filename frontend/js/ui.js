@@ -11,6 +11,18 @@ const RELATIONSHIP_STATUS_LABEL = {
   widowed:     "ม่าย 🖤",
 };
 
+const CHAR_TYPE_CONFIG = {
+  human:       { emoji: "👤", label: "บุคคลทั่วไป",     minAge: 15, maxAge: 80  },
+  partner:     { emoji: "💕", label: "แฟน/คู่รัก",      minAge: 18, maxAge: 60  },
+  parent:      { emoji: "👩‍👧", label: "พ่อ/แม่",         minAge: 30, maxAge: 75  },
+  grandparent: { emoji: "👴", label: "ปู่/ย่า/ตา/ยาย",  minAge: 55, maxAge: 95  },
+  teacher:     { emoji: "📚", label: "ครู/อาจารย์",      minAge: 25, maxAge: 65  },
+  boss:        { emoji: "💼", label: "หัวหน้า",          minAge: 28, maxAge: 65  },
+  coworker:    { emoji: "🏢", label: "เพื่อนร่วมงาน",   minAge: 20, maxAge: 55  },
+  friend:      { emoji: "😊", label: "เพื่อน",           minAge: 10, maxAge: 70  },
+  pet:         { emoji: "🐾", label: "สัตว์เลี้ยง",     minAge: 0,  maxAge: 20, isPet: true },
+};
+
 const EMOTION_CONFIG = [
   { key: "happiness",  label: "Happiness 😊",  cls: "bar-happiness" },
   { key: "stress",     label: "Stress 😰",     cls: "bar-stress" },
@@ -24,7 +36,8 @@ const EMOTION_CONFIG = [
 ];
 
 const ui = {
-  _dailyLog: [], // [{simDay, simTime, charId, charName, avatar, activity, location, decision, isNotable, notableReason, events, actionType}]
+  _dailyLog: [],         // [{simDay, simTime, charId, charName, avatar, activity, location, decision, isNotable, notableReason, events, actionType}]
+  _activeCharFilter: null, // null = all characters
 
   addDailyLogEntry(entry) {
     this._dailyLog.unshift(entry); // newest first
@@ -32,42 +45,91 @@ const ui = {
     this._renderDailyTimeline();
   },
 
+  renderCharacterTabs(characters) {
+    const container = document.getElementById("tl-filter-tabs");
+    if (!container) return;
+    const tabs = [
+      { id: null, label: "ทั้งหมด", avatar: "👥" },
+      ...characters.map(c => {
+        const typeCfg = CHAR_TYPE_CONFIG[c.character_type] || CHAR_TYPE_CONFIG.human;
+        const defaultAvatar = typeCfg.isPet ? "🐾" : (c.gender === "female" ? "👩" : c.gender === "male" ? "👨" : "👤");
+        return {
+          id:     c.id,
+          label:  c.nickname || c.name,
+          avatar: c.avatar_emoji || defaultAvatar,
+        };
+      }),
+    ];
+    container.innerHTML = tabs.map(t =>
+      `<button class="tl-tab${this._activeCharFilter === t.id ? " active" : ""}" data-char="${t.id ?? ""}">${t.avatar} ${t.label}</button>`
+    ).join("");
+    container.querySelectorAll(".tl-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const raw = btn.dataset.char;
+        this._activeCharFilter = raw ? parseInt(raw) : null;
+        container.querySelectorAll(".tl-tab").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this._renderDailyTimeline();
+      });
+    });
+  },
+
   _renderDailyTimeline() {
     const container = document.getElementById("daily-timeline");
     if (!container) return;
+
+    const data = this._activeCharFilter !== null
+      ? this._dailyLog.filter(e => e.charId === this._activeCharFilter)
+      : this._dailyLog;
+
     const byDay = {};
-    for (const e of this._dailyLog) {
+    for (const e of data) {
       if (!byDay[e.simDay]) byDay[e.simDay] = [];
       byDay[e.simDay].push(e);
     }
     const days = Object.keys(byDay).sort((a, b) => b - a);
     const DOW_FULL = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
+
+    if (days.length === 0) {
+      container.innerHTML = `<p class="muted" style="padding:6px 0">ยังไม่มีข้อมูล</p>`;
+      return;
+    }
+
     container.innerHTML = days.map(day => {
-      // Sort entries within the day ascending by sim_time (06:00 first, 23:00 last)
       const sorted = [...byDay[day]].sort((a, b) => a.simTime.localeCompare(b.simTime));
+      const notableCount = sorted.filter(e => e.isNotable).length;
+      const dowFull = DOW_FULL[(parseInt(day) - 1) % 7];
+      const notablePill = notableCount > 0
+        ? `<span class="tl-day-notable">${notableCount} เหตุการณ์</span>`
+        : "";
+
       const rows = sorted.map(e => {
         const notableClass = e.isNotable ? " notable" : "";
-        const notableBadge = e.isNotable && e.notableReason
-          ? `<span class="tl-notable-badge">${e.notableReason}</span>`
+        const notableBadge = e.isNotable
+          ? `<span class="tl-notable-badge">${e.notableReason || "⭐"}</span>`
+          : "";
+        const decisionRow = (e.isNotable && e.decision)
+          ? `<div class="tl-decision">➤ ${e.decision}</div>`
           : "";
         const eventsRow = (e.events && e.events.length > 0)
-          ? `<div class="tl-events">${e.events.join(" · ")}</div>`
+          ? `<div class="tl-events">⚡ ${e.events.join(" · ")}</div>`
           : "";
         return `
           <div class="tl-entry${notableClass}">
             <span class="tl-time">${e.simTime}</span>
             <span class="tl-avatar">${e.avatar}</span>
             <span class="tl-name">${e.charName}</span>
-            <span class="tl-dot">·</span>
-            <span class="tl-act">${e.activity} @ ${e.location}</span>
+            <span class="tl-act">${e.activity}<span class="tl-loc"> @ ${e.location}</span></span>
             ${notableBadge}
           </div>
-          ${e.decision ? `<div class="tl-decision">➤ ${e.decision}</div>` : ""}
-          ${eventsRow}
+          ${decisionRow}${eventsRow}
         `;
       }).join("");
-      const dowFull = DOW_FULL[(parseInt(day) - 1) % 7];
-      return `<div class="tl-day-group"><div class="tl-day-header">วันที่ ${day} · ${dowFull}</div>${rows}</div>`;
+
+      return `<div class="tl-day-group">
+        <div class="tl-day-header">วันที่ ${day} · ${dowFull} ${notablePill}</div>
+        ${rows}
+      </div>`;
     }).join("");
   },
 
@@ -124,13 +186,17 @@ const ui = {
       const partnerLine = partner
         ? `<div class="char-partner-line">❤️ กับ ${partner.nickname || partner.name}</div>`
         : "";
-      const hasPersona = char._hasPersona;
+      const typeCfg = CHAR_TYPE_CONFIG[char.character_type] || CHAR_TYPE_CONFIG.human;
+      const typeBadge = char.character_type && char.character_type !== "human"
+        ? `<span class="char-type-badge">${typeCfg.emoji} ${typeCfg.label}</span>`
+        : "";
+      const defaultAvatar = typeCfg.isPet ? "🐾" : (char.gender === "female" ? "👩" : char.gender === "male" ? "👨" : "👤");
       card.innerHTML = `
-        <span class="char-avatar">${char.avatar_emoji || (char.gender === "female" ? "👩" : char.gender === "male" ? "👨" : "👤")}</span>
+        <span class="char-avatar">${char.avatar_emoji || defaultAvatar}</span>
         <div class="char-info">
-          <div class="char-name">${char.name}${char.nickname ? ` (${char.nickname})` : ""}</div>
+          <div class="char-name">${char.name}${char.nickname ? ` (${char.nickname})` : ""} ${typeBadge}</div>
           <div class="char-status muted">${char.occupation || ""}</div>
-          <div class="char-rel-status">${statusLabel}${partnerLine}</div>
+          <div class="char-rel-status">${typeCfg.isPet ? "" : statusLabel}${partnerLine}</div>
         </div>
         <div class="char-actions">
           <button class="btn-char-action btn-quiz" title="ทดสอบบุคลิก" data-id="${char.id}">📋</button>
@@ -161,6 +227,7 @@ const ui = {
       opt.textContent = char.nickname || char.name;
       eventSelect.appendChild(opt);
     }
+    this.renderCharacterTabs(characters);
   },
 
   selectCharacter(charId, characters) {
@@ -260,33 +327,37 @@ const ui = {
     const partnerOptions = `<option value="">— ไม่มี —</option>` +
       others.map(c => `<option value="${c.id}" ${char.partner_id===c.id?"selected":""}>${c.nickname||c.name}</option>`).join("");
 
+    const charType = char.character_type || "human";
     this.showModal(`
       <h2 style="color:var(--accent);margin-bottom:12px">✏️ แก้ไขตัวละคร</h2>
       <form id="form-edit-char">
+        <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px">ประเภทตัวละคร</label>
+        <select class="input-field" id="e-char-type">${this._charTypeOptions(charType)}</select>
         <input class="input-field" id="e-name"       value="${char.name}"                placeholder="ชื่อเต็ม" required />
         <input class="input-field" id="e-nickname"   value="${char.nickname || ""}"      placeholder="ชื่อเล่น" />
-        <input class="input-field" id="e-age"        value="${char.age || ""}"           placeholder="อายุ" type="number" min="18" max="60" />
+        <input class="input-field" id="e-age"        value="${char.age || ""}"           placeholder="อายุ" type="number" min="0" max="95" />
         <input class="input-field" id="e-occupation" value="${char.occupation || ""}"    placeholder="อาชีพ" />
-        <select class="input-field" id="e-gender">
+        <div id="e-gender-row"><select class="input-field" id="e-gender">
           <option value="unspecified" ${char.gender==="unspecified"?"selected":""}>เพศ (ไม่ระบุ)</option>
           <option value="male"        ${char.gender==="male"       ?"selected":""}>ชาย 👨</option>
           <option value="female"      ${char.gender==="female"     ?"selected":""}>หญิง 👩</option>
-        </select>
-        <select class="input-field" id="e-rel-status">
+        </select></div>
+        <div id="e-rel-row"><select class="input-field" id="e-rel-status">
           <option value="single"      ${char.relationship_status==="single"     ?"selected":""}>โสด 💚</option>
           <option value="dating"      ${char.relationship_status==="dating"     ?"selected":""}>คบอยู่ 💕</option>
           <option value="married"     ${char.relationship_status==="married"    ?"selected":""}>แต่งงานแล้ว 💍</option>
           <option value="complicated" ${char.relationship_status==="complicated"?"selected":""}>ซับซ้อน 🌀</option>
           <option value="divorced"    ${char.relationship_status==="divorced"   ?"selected":""}>หย่าแล้ว 💔</option>
           <option value="widowed"     ${char.relationship_status==="widowed"    ?"selected":""}>ม่าย 🖤</option>
-        </select>
+        </select></div>
         <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px">❤️ คู่รัก / แฟน</label>
         <select class="input-field" id="e-partner">${partnerOptions}</select>
-        <input class="input-field" id="e-emoji" value="${char.avatar_emoji || ""}" placeholder="Avatar emoji เช่น 👩" maxlength="2" />
+        <input class="input-field" id="e-emoji" value="${char.avatar_emoji || ""}" placeholder="Avatar emoji เช่น 👩 🐶" maxlength="2" />
         ${this._profileExtraFields("e", char.profile_extra || {})}
         <button type="submit" class="btn-primary btn-full" style="margin-top:8px">💾 บันทึก</button>
       </form>
     `);
+    this._setupCharTypeForm("e");
     document.getElementById("form-edit-char").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
@@ -297,8 +368,9 @@ const ui = {
           age:                 parseInt(document.getElementById("e-age").value) || null,
           occupation:          document.getElementById("e-occupation").value || null,
           gender:              document.getElementById("e-gender").value,
-          relationship_status: document.getElementById("e-rel-status").value,
+          relationship_status: document.getElementById("e-rel-status")?.value || "single",
           avatar_emoji:        document.getElementById("e-emoji").value      || null,
+          character_type:      document.getElementById("e-char-type").value,
           profile_extra:       this._collectProfileExtra("e"),
         };
         if (partnerVal) {
@@ -481,44 +553,74 @@ const ui = {
     };
   },
 
+  _charTypeOptions(selected = "human") {
+    return Object.entries(CHAR_TYPE_CONFIG).map(([k, v]) =>
+      `<option value="${k}" ${selected === k ? "selected" : ""}>${v.emoji} ${v.label}</option>`
+    ).join("");
+  },
+
+  _setupCharTypeForm(prefix) {
+    const typeEl = document.getElementById(`${prefix}-char-type`);
+    if (!typeEl) return;
+    const apply = () => {
+      const cfg = CHAR_TYPE_CONFIG[typeEl.value] || CHAR_TYPE_CONFIG.human;
+      const ageEl = document.getElementById(`${prefix}-age`);
+      if (ageEl) { ageEl.min = cfg.minAge; ageEl.max = cfg.maxAge; ageEl.placeholder = cfg.isPet ? "อายุ (ปี)" : `อายุ (${cfg.minAge}–${cfg.maxAge})`; }
+      const occEl = document.getElementById(`${prefix}-occupation`);
+      if (occEl) occEl.placeholder = cfg.isPet ? "ประเภท/สายพันธุ์ เช่น หมาไทย, แมวเปอร์เซีย" : "อาชีพ";
+      const relRow = document.getElementById(`${prefix}-rel-row`);
+      if (relRow) relRow.style.display = cfg.isPet ? "none" : "";
+      const genderRow = document.getElementById(`${prefix}-gender-row`);
+      if (genderRow) genderRow.innerHTML = cfg.isPet
+        ? `<select class="input-field" id="${prefix}-gender"><option value="male">เพศผู้ ♂</option><option value="female">เพศเมีย ♀</option><option value="unspecified">ไม่ทราบเพศ</option></select>`
+        : `<select class="input-field" id="${prefix}-gender"><option value="unspecified">เพศ (ไม่ระบุ)</option><option value="male">ชาย 👨</option><option value="female">หญิง 👩</option></select>`;
+    };
+    typeEl.addEventListener("change", apply);
+    apply();
+  },
+
   showAddCharacterForm() {
     this.showModal(`
       <h2 style="color:var(--accent);margin-bottom:12px">เพิ่มตัวละคร</h2>
       <form id="form-add-char">
+        <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px">ประเภทตัวละคร</label>
+        <select class="input-field" id="f-char-type">${this._charTypeOptions("human")}</select>
         <input class="input-field" id="f-name" placeholder="ชื่อเต็ม" required />
         <input class="input-field" id="f-nickname" placeholder="ชื่อเล่น (ถ้ามี)" />
-        <input class="input-field" id="f-age" placeholder="อายุ" type="number" min="18" max="60" />
+        <input class="input-field" id="f-age" placeholder="อายุ (15–80)" type="number" min="15" max="80" />
         <input class="input-field" id="f-occupation" placeholder="อาชีพ" />
-        <select class="input-field" id="f-gender">
+        <div id="f-gender-row"><select class="input-field" id="f-gender">
           <option value="unspecified">เพศ (ไม่ระบุ)</option>
           <option value="male">ชาย 👨</option>
           <option value="female">หญิง 👩</option>
-        </select>
-        <select class="input-field" id="f-rel-status">
+        </select></div>
+        <div id="f-rel-row"><select class="input-field" id="f-rel-status">
           <option value="single">โสด 💚</option>
           <option value="dating">คบอยู่ 💕</option>
           <option value="married">แต่งงานแล้ว 💍</option>
           <option value="complicated">ซับซ้อน 🌀</option>
           <option value="divorced">หย่าแล้ว 💔</option>
           <option value="widowed">ม่าย 🖤</option>
-        </select>
-        <input class="input-field" id="f-emoji" placeholder="Avatar emoji เช่น 👩" maxlength="2" />
+        </select></div>
+        <input class="input-field" id="f-emoji" placeholder="Avatar emoji เช่น 👩 🐶" maxlength="2" />
         ${this._profileExtraFields("f")}
         <button type="submit" class="btn-primary btn-full" style="margin-top:8px">สร้างตัวละคร</button>
       </form>
     `);
+    this._setupCharTypeForm("f");
     document.getElementById("form-add-char").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
         const char = await API.createCharacter({
-          name: document.getElementById("f-name").value,
-          nickname: document.getElementById("f-nickname").value || null,
-          age: parseInt(document.getElementById("f-age").value) || null,
-          occupation: document.getElementById("f-occupation").value || null,
-          gender: document.getElementById("f-gender").value,
-          relationship_status: document.getElementById("f-rel-status").value,
-          avatar_emoji: document.getElementById("f-emoji").value || null,
-          profile_extra: this._collectProfileExtra("f"),
+          name:                document.getElementById("f-name").value,
+          nickname:            document.getElementById("f-nickname").value || null,
+          age:                 parseInt(document.getElementById("f-age").value) || null,
+          occupation:          document.getElementById("f-occupation").value || null,
+          gender:              document.getElementById("f-gender").value,
+          relationship_status: document.getElementById("f-rel-status")?.value || "single",
+          avatar_emoji:        document.getElementById("f-emoji").value || null,
+          character_type:      document.getElementById("f-char-type").value,
+          profile_extra:       this._collectProfileExtra("f"),
         });
         ui.closeModal();
         ui.log(`Created character: ${char.name}`, "event");

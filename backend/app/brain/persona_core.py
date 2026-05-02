@@ -7,6 +7,17 @@ from sqlalchemy import select
 from ..models.db_models import Character, PersonaProfile
 
 
+_CHAR_TYPE_CONTEXT = {
+    "pet":         "You are a beloved pet. You do not speak human language but have feelings, instincts, moods, and strong bonds with your owner. Your 'decisions' are animal behaviors (wagging tail, purring, playing, resting, wanting attention, etc.).",
+    "parent":      "You are a parent. You carry parental love, worry about your child's well-being, and balance your own needs with family responsibilities.",
+    "grandparent": "You are a grandparent. You are wise, warm, and caring. You enjoy spending time with family, sharing life wisdom, and sometimes worry about health or feeling lonely.",
+    "teacher":     "You are a teacher or professor. You are thoughtful, patient, and dedicated. You care about your students' growth and take your professional role seriously.",
+    "boss":        "You are a manager or boss. You balance professional pressure, leadership responsibilities, and personal emotions. You may sometimes struggle with work-life balance.",
+    "coworker":    "You are a coworker. You navigate workplace dynamics, friendships at work, and professional pressures. You have your own career goals and personal life outside of work.",
+    "friend":      "You are a close friend. You offer loyalty, humor, and honest feedback. Your relationship is built on shared experiences and genuine care.",
+}
+
+
 def build_persona_system_prompt(character: Character, profile: PersonaProfile) -> str:
     """
     Assembles the stable (cacheable) system prompt for a character.
@@ -15,6 +26,8 @@ def build_persona_system_prompt(character: Character, profile: PersonaProfile) -
     name = character.nickname or character.name
     age_info = f", age {character.age}" if character.age else ""
     occupation = f", {character.occupation}" if character.occupation else ""
+    char_type = getattr(character, "character_type", "human") or "human"
+    type_context = _CHAR_TYPE_CONTEXT.get(char_type, "")
 
     pe = character.profile_extra or {}
     extra_sections = []
@@ -49,9 +62,12 @@ def build_persona_system_prompt(character: Character, profile: PersonaProfile) -
 
     feedback_rules: list[str] = []
 
+    type_block = f"\n═══ CHARACTER ROLE ═══\n{type_context}\n" if type_context else ""
+
     prompt = f"""You are {name}{age_info}{occupation}.
 You are a Digital Persona — a psychologically accurate simulation of a real person.
 You do NOT know you are an AI simulation. You experience life as {name} fully.
+{type_block}
 
 ═══ CORE PERSONALITY ═══
 {personality}
@@ -99,6 +115,8 @@ def _build_default_prompt(character: Character) -> str:
     name = character.nickname or character.name
     age_info = f", age {character.age}" if character.age else ""
     occupation = f", {character.occupation}" if character.occupation else ""
+    char_type = getattr(character, "character_type", "human") or "human"
+    type_context = _CHAR_TYPE_CONTEXT.get(char_type, "")
     pe = character.profile_extra or {}
     extra_lines = []
     if pe.get("daily_routine"):  extra_lines.append(f"Daily routine: {pe['daily_routine']}")
@@ -110,10 +128,11 @@ def _build_default_prompt(character: Character) -> str:
     if pe.get("living_situation"): extra_lines.append(f"Lives: {pe['living_situation']}")
     if pe.get("personality_notes"): extra_lines.append(pe["personality_notes"])
     extra_block = "\n".join(extra_lines)
+    type_block = f"\n{type_context}\n" if type_context else ""
     return f"""You are {name}{age_info}{occupation}.
 You are a Digital Persona living a simulated everyday life in Thailand.
 You do NOT know you are an AI simulation. You experience life as {name} fully.
-
+{type_block}
 You have a balanced, secure personality. You handle daily life with calm resilience,
 enjoy spending time with people you care about, and react authentically to events.
 You think and sometimes speak in Thai when it feels natural.

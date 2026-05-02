@@ -195,75 +195,101 @@ aside {
   box-shadow: 0 0 6px rgba(90,140,74,0.5);
 }
 
-/* ── Activity Log ─────────────────────────────────────────────────────────── */
+/* ── Activity Log Footer ──────────────────────────────────────────────────── */
 #activity-log {
   background: linear-gradient(to bottom,#e4d8b8,#d8c8a0);
   border-top: 3px solid var(--border-dark);
-  display: grid; grid-template-columns: 1fr 1fr;
+  display: grid; grid-template-columns: 1fr 1.6fr;
   gap: 0; overflow: hidden;
 }
-#log-panel, #daily-timeline-panel {
-  padding: 8px 12px; overflow-y: auto;
+#log-panel { border-right: 2px solid var(--border); padding: 8px 10px; overflow-y: auto; }
+#daily-timeline-panel { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.tl-panel-header {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 10px 4px; border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.18); flex-shrink: 0;
 }
-#log-panel { border-right: 2px solid var(--border); }
+.tl-panel-header h3 {
+  font-size: 10px; color: var(--accent); text-transform: uppercase;
+  letter-spacing: 2px; white-space: nowrap; margin: 0;
+}
+#daily-timeline { flex: 1; overflow-y: auto; padding: 4px 10px 8px; }
 #activity-log h3 {
   font-size: 10px; color: var(--accent); text-transform: uppercase;
   letter-spacing: 2px; margin-bottom: 5px;
 }
+
+/* ── Live Feed ────────────────────────────────────────────────────────────── */
 #log-entries { display: flex; flex-direction: column; gap: 3px; }
 .log-entry {
   font-size: 11px; padding: 3px 7px;
   border-left: 3px solid var(--border); color: var(--text-muted);
   background: rgba(255,255,255,0.32); border-radius: 0 3px 3px 0;
 }
-.log-entry.event { border-left-color: var(--accent-2); color: var(--text); }
-.log-entry.tick  { border-left-color: var(--accent); }
+.log-entry.event {
+  border-left-color: var(--accent-2); color: var(--text);
+  background: rgba(212,129,62,0.08);
+}
+.log-entry.tick  { border-left-color: var(--accent); color: var(--text-muted); }
 .log-entry.error { border-left-color: var(--red); color: var(--red); }
-.log-entry .ts        { margin-right: 6px; font-size: 10px; }
-.log-entry .real-ts   { color: var(--text-muted); }
-.log-entry .sim-ts    {
+.log-entry .ts      { margin-right: 6px; font-size: 10px; }
+.log-entry .real-ts { color: var(--text-muted); }
+.log-entry .sim-ts  {
   color: var(--accent); font-weight: bold;
-  background: rgba(122,82,48,0.1); border-radius: 3px;
-  padding: 1px 4px;
+  background: rgba(122,82,48,0.12); border-radius: 3px; padding: 1px 4px;
 }
 
+/* ── Character Filter Tabs ────────────────────────────────────────────────── */
+#tl-filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tl-tab {
+  font-family: var(--pixel-font); font-size: 10px;
+  padding: 2px 8px; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid var(--border); background: var(--bg-card);
+  color: var(--text-muted); transition: all 0.1s; white-space: nowrap;
+}
+.tl-tab:hover  { border-color: var(--accent-2); color: var(--text); }
+.tl-tab.active { background: var(--accent); color: #f5e0c0; border-color: var(--border-dark); }
+
 /* ── Daily Timeline ───────────────────────────────────────────────────────── */
-#daily-timeline { display: flex; flex-direction: column; gap: 2px; }
 .tl-day-group { margin-bottom: 6px; }
 .tl-day-header {
+  display: flex; align-items: center; gap: 6px;
   font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
   color: var(--accent); border-bottom: 1px solid var(--border);
   padding-bottom: 2px; margin-bottom: 3px;
 }
+.tl-day-notable {
+  font-size: 9px; color: #9a7010; background: rgba(212,168,32,0.2);
+  border-radius: 8px; padding: 1px 6px; letter-spacing: 0; text-transform: none;
+}
 .tl-entry {
-  display: flex; align-items: baseline; gap: 5px;
-  font-size: 11px; padding: 2px 6px;
+  display: flex; align-items: baseline; gap: 4px;
+  font-size: 11px; padding: 2px 5px;
   background: rgba(255,255,255,0.28); border-radius: 3px;
   border-left: 3px solid var(--border);
 }
-.tl-entry:hover { background: rgba(255,255,255,0.5); }
-.tl-time { color: var(--text-muted); font-size: 10px; min-width: 38px; flex-shrink: 0; }
-.tl-avatar { font-size: 13px; flex-shrink: 0; }
-.tl-name { font-weight: bold; color: var(--accent); flex-shrink: 0; font-size: 10px; }
-.tl-dot { color: var(--text-muted); flex-shrink: 0; }
-.tl-act { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tl-decision {
-  font-size: 10px; color: var(--text-muted); margin-left: 43px;
-  font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+.tl-entry:hover { background: rgba(255,255,255,0.52); }
 .tl-entry.notable {
   border-left-color: var(--yellow);
   background: rgba(212,168,32,0.10);
 }
+.tl-time   { color: var(--text-muted); font-size: 10px; min-width: 36px; flex-shrink: 0; }
+.tl-avatar { font-size: 12px; flex-shrink: 0; }
+.tl-name   { font-weight: bold; color: var(--accent); flex-shrink: 0; font-size: 10px; min-width: 36px; }
+.tl-act    { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.tl-loc    { color: var(--text-muted); font-size: 10px; }
 .tl-notable-badge {
-  font-size: 9px; color: #b08010;
-  background: rgba(212,168,32,0.18);
-  border-radius: 3px; padding: 1px 5px;
-  margin-left: 4px; white-space: nowrap;
+  font-size: 9px; color: #9a7010;
+  background: rgba(212,168,32,0.22);
+  border-radius: 8px; padding: 1px 6px; flex-shrink: 0; white-space: nowrap;
+}
+.tl-decision {
+  font-size: 10px; color: var(--text-muted); margin-left: 46px;
+  font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .tl-events {
   font-size: 9px; color: var(--accent-2);
-  margin-left: 43px; margin-top: 1px;
+  margin-left: 46px; margin-top: 1px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -301,8 +327,9 @@ aside {
 .rel-hearts { font-size: 11px; margin-left: auto; white-space: nowrap; }
 
 /* ── Character card rel status ────────────────────────────────────────────── */
-.char-rel-status { font-size: 10px; color: var(--accent-2); margin-top: 1px; }
-.char-partner-line { font-size: 10px; color: var(--heart); margin-top: 1px; }
+.char-rel-status  { font-size: 10px; color: var(--accent-2); margin-top: 1px; }
+.char-partner-line{ font-size: 10px; color: var(--heart); margin-top: 1px; }
+.char-type-badge  { font-size: 9px; background: var(--accent); color: #fff; border-radius: 4px; padding: 0px 4px; vertical-align: middle; }
 
 /* ── Character card action buttons ───────────────────────────────────────── */
 .char-actions { display: flex; flex-direction: column; gap: 3px; opacity: 0; transition: opacity 0.15s; }

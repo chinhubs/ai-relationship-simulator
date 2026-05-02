@@ -48,6 +48,7 @@ class Character(Base):
     gender: Mapped[str] = mapped_column(String(20), default="unspecified")
     relationship_status: Mapped[str] = mapped_column(String(30), default="single")
     partner_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("characters.id"), nullable=True)
+    character_type: Mapped[str] = mapped_column(String(50), default="human")
     profile_extra: Mapped[dict] = mapped_column(JSON, default=dict)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

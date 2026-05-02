@@ -166,9 +166,32 @@ class SimulationController {
 
     renderer.updateCharacterPosition(charId, result.location, result.activity);
     renderer.setSimTime(result.next_sim_time);
+    renderer.updateEmotionState(charId, result.emotion_after);
 
-    ui.log(`${avatar} ${label}  ${result.activity} @ ${result.location}`, "tick", sd, st);
+    const _notableActions = ["respond_message","initiate_contact","confront","seek_comfort","vent","withdraw"];
+    const hasEvents   = result.events_processed?.length > 0;
+    const hasMsg      = !!result.message_to_send;
+    const isNotableAct = result.action_type && _notableActions.includes(result.action_type);
+    const isNotable   = hasEvents || hasMsg || isNotableAct;
 
+    // Live feed: only show when something interesting happens (not every routine tick)
+    if (isNotable) {
+      ui.log(`${avatar} ${label} · ${result.activity} @ ${result.location}`, "event", sd, st);
+    }
+    if (result.message_to_send) {
+      renderer.showCharacterMessage(charId, result.message_to_send);
+      ui.log(`  💬 "${result.message_to_send}"`, "event", sd, st);
+    }
+    if (isNotable && result.decision) {
+      ui.log(`  ➤ ${result.decision}`, "tick", sd, st);
+    }
+    if (hasEvents) {
+      for (const ev of result.events_processed) {
+        ui.log(`  ⚡ ${ev.substring(0, 80)}`, "event", sd, st);
+      }
+    }
+
+    // Daily journal always gets every tick
     ui.addDailyLogEntry({
       simDay:        sd,
       simTime:       st,
@@ -178,24 +201,11 @@ class SimulationController {
       activity:      result.activity,
       location:      result.location,
       decision:      result.decision || null,
-      isNotable:     !!(result.events_processed?.length || (result.action_type && ["respond_message","initiate_contact","confront","seek_comfort","vent","withdraw"].includes(result.action_type))),
+      isNotable,
       notableReason: null,
       events:        result.events_processed || [],
       actionType:    result.action_type || null,
     });
-
-    if (result.message_to_send) {
-      renderer.showSpeechBubble(result.message_to_send);
-      ui.log(`  💬 "${result.message_to_send}"`, "event", sd, st);
-    }
-    if (result.decision) {
-      ui.log(`  ➤ ${result.decision}`, "tick", sd, st);
-    }
-    if (result.events_processed?.length) {
-      for (const ev of result.events_processed) {
-        ui.log(`  ⚡ ${ev.substring(0, 80)}`, "event", sd, st);
-      }
-    }
   }
 
   // ── Load historical daily log from DB for a character (first time only) ──
