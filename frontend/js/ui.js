@@ -24,6 +24,38 @@ const EMOTION_CONFIG = [
 ];
 
 const ui = {
+  _dailyLog: [], // [{simDay, simTime, charId, charName, avatar, activity, location, decision}]
+
+  addDailyLogEntry(entry) {
+    this._dailyLog.unshift(entry); // newest first
+    if (this._dailyLog.length > 200) this._dailyLog.pop();
+    this._renderDailyTimeline();
+  },
+
+  _renderDailyTimeline() {
+    const container = document.getElementById("daily-timeline");
+    if (!container) return;
+    const byDay = {};
+    for (const e of this._dailyLog) {
+      if (!byDay[e.simDay]) byDay[e.simDay] = [];
+      byDay[e.simDay].push(e);
+    }
+    const days = Object.keys(byDay).sort((a, b) => b - a);
+    container.innerHTML = days.map(day => {
+      const rows = byDay[day].map(e => `
+        <div class="tl-entry">
+          <span class="tl-time">${e.simTime}</span>
+          <span class="tl-avatar">${e.avatar}</span>
+          <span class="tl-name">${e.charName}</span>
+          <span class="tl-dot">·</span>
+          <span class="tl-act">${e.activity} @ ${e.location}</span>
+        </div>
+        ${e.decision ? `<div class="tl-decision">➤ ${e.decision}</div>` : ""}
+      `).join("");
+      return `<div class="tl-day-group"><div class="tl-day-header">วันที่ ${day}</div>${rows}</div>`;
+    }).join("");
+  },
+
   log(message, type = "default") {
     const container = document.getElementById("log-entries");
     const entry = document.createElement("div");
