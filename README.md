@@ -1,10 +1,20 @@
 # AI Relationship Simulator
 
-> **v1.7.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
+> **v1.8.0** — Digital Persona Relationship Simulator — autonomous AI characters that live, feel, and react in a pixel art isometric city.
 
 A web-based simulation platform where you create psychologically-accurate AI personas, run them through a daily life simulation, and observe how they feel, decide, and form relationships over time — all inside a living, animated pixel art world.
 
 ---
+
+## What's New in v1.8.0
+
+- **Emotion Icons Always Visible** — every outdoor character now displays a floating emotion icon at all times (😊 😰 💕 😔 😠 🥱 …); thresholds lowered and a fallback cascade ensures no character is ever icon-less; icons have a dark semi-transparent background pill for legibility against any scene
+- **Improved Character Name Labels** — labels now show the character's avatar emoji + name (`😊 แอน`); larger 11 px font, pill background, heavier stroke; positioned well above the sprite head for clear separation
+- **Correct Indoor Label Positions** — indoor scene characters render sprites at 2× scale (48 px tall); name and activity labels were overlapping the sprite body; both labels are now placed above the sprite head (`−56 px` / `−44 px`)
+- **Ambient NPC Labels Fixed** — indoor ambient NPCs (staff, customers, patients…) also had the same 2× overlap bug; now fixed with matching pill-style labels
+- **Speech Bubble Text Larger** — bubble message text increased from 7 px to 9 px for readability
+- **Occupation-Aware Work Locations** — `personalise_work_slot()` maps each character's `occupation` + `work_details` to their actual workplace: WFH/freelancers work from home (occasional office visit), beauty-clinic doctors go to the mall, hospital staff go to the hospital, baristas to the café, chefs to the restaurant, teachers to school, etc.
+- **Stable WFH Decisions** — a day+id seeded RNG ensures a character who works from home on a given day stays home for all ticks of that day
 
 ## What's New in v1.7.0
 
@@ -194,6 +204,15 @@ ai-relationship-simulator/
 ---
 
 ## Changelog
+
+### v1.8.0 — Emotion Overlays, Label Polish & Occupation-Aware Locations
+- Emotion icons now always display above outdoor characters — lowered thresholds, full fallback cascade, dark pill background for visibility
+- Name labels redesigned: avatar emoji prefix, 11 px font, pill background, higher y-offset clears sprite head
+- Fixed indoor label y-offset bug: 2× scaled sprites (48 px tall) now have labels properly above the head (`−56`/`−44 px`)
+- Fixed same y-offset bug for ambient NPC labels inside buildings
+- Speech bubble text enlarged from 7 px to 9 px
+- `personalise_work_slot()`: maps `occupation`/`work_details` to actual workplace (hospital, mall clinic, café, restaurant, bank, school, gym, store, tech WFH)
+- Day+id seeded RNG for stable same-day WFH decisions across all ticks
 
 ### v1.7.0 — Real Indoor Phaser Scene
 - `IndoorScene` Phaser scene: clicking a building transitions from the outdoor `IsoScene` (sleeps) to a fully rendered indoor top-down view

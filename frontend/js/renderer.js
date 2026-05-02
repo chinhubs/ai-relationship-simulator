@@ -846,9 +846,13 @@ class IsoScene extends Phaser.Scene {
             if (this._didDrag || renderer._modalOpen || Date.now() - (renderer._modalJustClosed || 0) < 200) return;
             if (renderer.onCharacterClick) renderer.onCharacterClick(ch.id);
           });
-        const lbl = this.add.text(startX+i*10, startY-30, ch.nickname||ch.name.split(' ')[0], {
-          fontFamily:'monospace', fontSize:'9px', color:'#f8e898',
-          stroke:'#1a0a04', strokeThickness:3, resolution:2,
+        const _ava = ch.avatar_emoji || (isPet ? '🐾' : '👤');
+        const _dname = ch.nickname || ch.name.split(' ')[0];
+        const lbl = this.add.text(startX+i*10, startY-38, `${_ava} ${_dname}`, {
+          fontFamily:'monospace', fontSize:'11px', color:'#f8f0d0',
+          stroke:'#1a0804', strokeThickness:4,
+          backgroundColor:'#1a100aaa', padding:{x:5,y:3},
+          resolution:2,
         }).setOrigin(0.5,1).setDepth(Math.round((startY - OY) * 2000 / TH) + 201);
         this._charObjs.set(ch.id, {
           sprite:spr, label:lbl, px:startX+i*10, py:startY,
@@ -911,7 +915,7 @@ class IsoScene extends Phaser.Scene {
       if (Math.abs(dx)>1) obj.facingRight = dx>0;
       obj.px += dx*LERP; obj.py += dy*LERP;
       obj.sprite.setPosition(obj.px, obj.py);
-      obj.label.setPosition(obj.px, obj.py-28);
+      obj.label.setPosition(obj.px, obj.py-38);
       obj.sprite.setDepth(Math.round((obj.py - OY) * 2000 / TH) + 200);
       obj.label.setDepth(Math.round((obj.py - OY) * 2000 / TH) + 201);
       // Facing
@@ -1040,7 +1044,7 @@ class IsoScene extends Phaser.Scene {
       if (emo) {
         const icon = this._dominantEmoIcon(emo);
         if (icon) {
-          const ey = obj.py - 50 + Math.sin(this._tick*0.04 + id)*3;
+          const ey = obj.py - 68 + Math.sin(this._tick*0.04 + id)*3;
           this._drawEmojiAt(id, icon, obj.px, ey);
         }
       }
@@ -1050,28 +1054,41 @@ class IsoScene extends Phaser.Scene {
         const age = this._tick - bubble.born;
         if (age > 250) { _rs.bubbles.delete(id); continue; }
         const alpha = (age<20 ? age/20 : age>220 ? (250-age)/30 : 1) * visibility;
-        this._drawBubble(id, g, bubble.text, obj.px, obj.py-55, alpha);
+        this._drawBubble(id, g, bubble.text, obj.px, obj.py-90, alpha);
       }
     }
   }
 
   _dominantEmoIcon(e) {
-    if (e.stress      > 72) return '😰';
-    if (e.anxiety     > 68) return '😟';
-    if (e.resentment  > 55) return '😠';
-    if (e.loneliness  > 68) return '😔';
-    if (e.love        > 82) return '💕';
-    if (e.happiness   > 80) return '😊';
-    if (e.energy      < 25) return '🥱';
-    if (e.security    < 30) return '😨';
-    return null;
+    if (!e) return '😐';
+    // Strong negative states (high priority)
+    if (e.stress      > 58) return '😰';
+    if (e.anxiety     > 55) return '😟';
+    if (e.resentment  > 48) return '😠';
+    if (e.loneliness  > 58) return '😔';
+    // Strong positive states
+    if (e.love        > 68) return '💕';
+    if (e.happiness   > 68) return '😊';
+    // Low energy / low security
+    if (e.energy      < 32) return '🥱';
+    if (e.security    < 38) return '😨';
+    // Moderate states — always show something meaningful
+    if (e.happiness   > 55) return '🙂';
+    if (e.love        > 55) return '💗';
+    if (e.stress      > 45) return '😓';
+    if (e.loneliness  > 45) return '🙁';
+    if (e.energy      < 45) return '😴';
+    return '😐';
   }
 
   _drawEmojiAt(charId, emoji, x, y) {
     if (!this._emoPool) this._emoPool = new Map();
     let t = this._emoPool.get(charId);
     if (!t) {
-      t = this.add.text(x, y, emoji, { fontSize:'16px', resolution:2 }).setOrigin(0.5,0.5).setDepth(500010);
+      t = this.add.text(x, y, emoji, {
+        fontSize: '20px', resolution: 2,
+        backgroundColor: '#00000066', padding: { x: 3, y: 2 },
+      }).setOrigin(0.5, 0.5).setDepth(500010);
       this._emoPool.set(charId, t);
     }
     t.setText(emoji).setPosition(x, y).setVisible(true);
@@ -1098,7 +1115,7 @@ class IsoScene extends Phaser.Scene {
     let bt = this._bubblePool.get(charId);
     if (!bt) {
       bt = this.add.text(x, by+5, '', {
-        fontFamily:'monospace', fontSize:'7px', color:'#2a1408',
+        fontFamily:'monospace', fontSize:'9px', color:'#2a1408',
         wordWrap:{width:100}, align:'center', resolution:2,
       }).setOrigin(0.5,0).setDepth(500020);
       this._bubblePool.set(charId, bt);
@@ -1525,9 +1542,11 @@ class IndoorScene extends Phaser.Scene {
       const ni  = def.ni % 6;
       const spr = this.add.image(px, py, `npc_${ni}_r`)
         .setOrigin(0.5, 0.95).setScale(2).setDepth(100 + py);
-      const nlbl = this.add.text(px, py - 28, def.role, {
-        fontFamily:'monospace', fontSize:'7px', color: def.color,
-        stroke:'#1a0a04', strokeThickness:2, resolution:2,
+      const nlbl = this.add.text(px, py - 56, def.role, {
+        fontFamily:'monospace', fontSize:'9px', color: def.color,
+        stroke:'#1a0804', strokeThickness:3,
+        backgroundColor:'#1a100a99', padding:{x:4,y:2},
+        resolution:2,
       }).setOrigin(0.5, 1).setDepth(102 + py);
       const walker = {
         spr, nlbl, albl:null, px, py, tx:px, ty:py,
@@ -1563,13 +1582,19 @@ class IndoorScene extends Phaser.Scene {
       const isPet = ch.character_type === 'pet';
       const spr = this.add.image(px, py, isPet ? `pet_${ci}_r` : `char_${ci}_r_${gd}`)
         .setOrigin(0.5, 0.95).setScale(2).setDepth(100 + py);
-      const nlbl = this.add.text(px, py - 28, ch.nickname || ch.name.split(' ')[0], {
-        fontFamily:'monospace', fontSize:'8px', color:'#f8e898',
-        stroke:'#1a0a04', strokeThickness:3, resolution:2,
+      const _ia = ch.avatar_emoji || (ch.character_type === 'pet' ? '🐾' : '👤');
+      const _in = ch.nickname || ch.name.split(' ')[0];
+      const nlbl = this.add.text(px, py - 56, `${_ia} ${_in}`, {
+        fontFamily:'monospace', fontSize:'11px', color:'#f8f0d0',
+        stroke:'#1a0804', strokeThickness:4,
+        backgroundColor:'#1a100aaa', padding:{x:5,y:3},
+        resolution:2,
       }).setOrigin(0.5, 1).setDepth(102 + py);
-      const albl = ch.activity ? this.add.text(px, py - 15, ch.activity.substring(0, 24), {
-        fontFamily:'monospace', fontSize:'7px', color:'#d0c8a8',
-        stroke:'#1a0a04', strokeThickness:2, resolution:2,
+      const albl = ch.activity ? this.add.text(px, py - 44, ch.activity.substring(0, 28), {
+        fontFamily:'monospace', fontSize:'8px', color:'#c8d8f8',
+        stroke:'#0a0a14', strokeThickness:3,
+        backgroundColor:'#0a0a2888', padding:{x:4,y:2},
+        resolution:2,
       }).setOrigin(0.5, 1).setDepth(102 + py) : null;
 
       const walker = { spr, nlbl, albl, px, py, tx:px, ty:py, room, ci, gd, isPet, facingRight:true, waitTimer: Math.random() * 20 };
@@ -1636,8 +1661,8 @@ class IndoorScene extends Phaser.Scene {
         w.spr.setTexture(`char_${w.ci}_${w.facingRight?'r':'l'}_${w.gd}`);
       }
       w.spr.setPosition(w.px, w.py).setDepth(100 + w.py);
-      w.nlbl.setPosition(w.px, w.py - 28).setDepth(102 + w.py);
-      if (w.albl) w.albl.setPosition(w.px, w.py - 15).setDepth(102 + w.py);
+      w.nlbl.setPosition(w.px, w.py - 56).setDepth(102 + w.py);
+      if (w.albl) w.albl.setPosition(w.px, w.py - 44).setDepth(102 + w.py);
     }
   }
 }
