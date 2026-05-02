@@ -333,7 +333,7 @@ const ui = {
       byDay[e.simDay].push(e);
     }
     const days = Object.keys(byDay).sort((a, b) => b - a);
-    const DOW_FULL = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
+    // DOW_FULL retained for fallback but date now uses simDayToDate() from config.js
 
     if (days.length === 0) {
       container.innerHTML = `<p class="muted" style="padding:6px 0">ยังไม่มีข้อมูล</p>`;
@@ -343,7 +343,7 @@ const ui = {
     container.innerHTML = days.map(day => {
       const sorted = [...byDay[day]].sort((a, b) => a.simTime.localeCompare(b.simTime));
       const notableCount = sorted.filter(e => e.isNotable).length;
-      const dowFull = DOW_FULL[(parseInt(day) - 1) % 7];
+      const { d: _d, monthShort: _ms, yearBE: _y, dowFull } = simDayToDate(parseInt(day));
       const notablePill = notableCount > 0
         ? `<span class="tl-day-notable">${notableCount} เหตุการณ์</span>`
         : "";
@@ -372,7 +372,7 @@ const ui = {
       }).join("");
 
       return `<div class="tl-day-group">
-        <div class="tl-day-header">วันที่ ${day} · ${dowFull} ${notablePill}</div>
+        <div class="tl-day-header">วัน${dowFull}ที่ ${_d} ${_ms} ${_y} ${notablePill}</div>
         ${rows}
       </div>`;
     }).join("");
@@ -393,10 +393,10 @@ const ui = {
     entry.className = `log-entry ${type}`;
     let tsHtml;
     if (simDay != null && simTime) {
-      const dow    = this._DOW[(simDay - 1) % 7];
-      const h      = parseInt(simTime.split(":")[0], 10);
-      const period = this._simPeriod(h);
-      tsHtml = `<span class="ts sim-ts">${period}D${simDay}·${dow} ${simTime}</span>`;
+      const { d: _ld, monthShort: _lm, dowShort: _ldow } = simDayToDate(simDay);
+      const _lh    = parseInt(simTime.split(":")[0], 10);
+      const period = this._simPeriod(_lh);
+      tsHtml = `<span class="ts sim-ts">${period} ${_ldow} ${_ld} ${_lm} ${simTime}</span>`;
     } else {
       const ts = new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
       tsHtml = `<span class="ts real-ts">${ts}</span>`;
@@ -521,7 +521,7 @@ const ui = {
     panel.innerHTML = `
       <div class="state-row"><span class="state-label">สถานะความรัก</span><span class="state-val rel-badge">${relLabel}</span></div>
       ${partnerRow}
-      <div class="state-row"><span class="state-label">วันที่ ${state.sim_day}</span><span class="state-val">${state.current_sim_time}</span></div>
+      <div class="state-row"><span class="state-label">${(()=>{const {dowShort,d,monthShort,yearBE}=simDayToDate(state.sim_day);return `${dowShort} ${d} ${monthShort} ${yearBE}`;})()}</span><span class="state-val">${state.current_sim_time} น.</span></div>
       <div class="state-row"><span class="state-label">📍</span><span class="state-val">${state.current_location}</span></div>
       <div class="state-row"><span class="state-label">💼</span><span class="state-val">${state.current_activity}</span></div>
     `;

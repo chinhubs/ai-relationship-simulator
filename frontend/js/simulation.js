@@ -31,13 +31,12 @@ class SimulationController {
     const h   = Math.floor(totalMin / 60) % 24;
     const m   = Math.floor(totalMin % 60);
     const t   = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")} น.`;
-    const DOW = ["อา.","จ.","อ.","พ.","พฤ.","ศ.","ส."];
-    const dow = DOW[(day - 1) % 7];
     const period = (h >= 5 && h < 12) ? "🌅 เช้า"
                  : (h >= 12 && h < 18) ? "☀️ บ่าย"
                  : (h >= 18 && h < 22) ? "🌆 เย็น"
                  : "🌙 ดึก";
-    return `วันที่ ${day} · ${dow} · ${period} · ${t}`;
+    const { d, monthShort, yearBE, dowShort } = simDayToDate(day);
+    return `${dowShort} ${d} ${monthShort} ${yearBE} · ${period} · ${t}`;
   }
 
   _startClockAnim(simDay, nextSimTime) {
@@ -48,8 +47,9 @@ class SimulationController {
     this._clockAnim = setInterval(() => {
       const elapsed = Date.now() - startReal;
       let totalMin  = startMin + elapsed * simMinPerMs;
-      let day       = simDay;
-      if (totalMin >= 1440) { totalMin -= 1440; day++; }
+      const dayOffset = Math.floor(totalMin / 1440);
+      const day     = simDay + dayOffset;
+      totalMin      = totalMin % 1440;
       ui.updateClock(this._formatClockText(day, totalMin));
     }, 1000);
     // Show immediately without waiting 1s

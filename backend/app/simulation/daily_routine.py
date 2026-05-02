@@ -142,7 +142,8 @@ def get_routine_slot(sim_time: str, is_weekend: bool = False, char_type: str = "
 
 
 def is_weekend(sim_day: int) -> bool:
-    return (sim_day % 7) in (6, 0)
+    # Day 1 = Sunday, Day 7 = Saturday. Weekends: 1%7=1 (Sun), 7%7=0 (Sat)
+    return (sim_day % 7) in (0, 1)
 
 
 def advance_time(sim_time: str, minutes: int = 60) -> tuple[str, bool]:
