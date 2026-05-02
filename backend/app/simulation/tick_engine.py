@@ -21,7 +21,7 @@ from ..brain.relationship_manager import (
     update_relationship, derive_relationship_deltas_from_action,
     build_relationship_context_string, get_or_create_relationship,
 )
-from ..simulation.daily_routine import get_routine_slot, is_weekend, advance_time
+from ..simulation.daily_routine import get_routine_slot, personalise_work_slot, is_weekend, advance_time
 from ..simulation.event_processor import process_events_for_tick
 
 
@@ -92,6 +92,17 @@ async def run_tick(
     char_type = (_char.character_type or "human") if _char else "human"
 
     routine = get_routine_slot(sim_time, is_weekend=weekend, char_type=char_type)
+    # Override generic "office" slots with the character's actual workplace
+    if _char:
+        pe = _char.profile_extra or {}
+        routine = personalise_work_slot(
+            routine,
+            occupation=_char.occupation or "",
+            work_details=pe.get("work_details", "") or "",
+            daily_routine_notes=pe.get("daily_routine", "") or "",
+            sim_day=sim_day,
+            char_id=character_id,
+        )
     state.current_location = routine.location
     state.current_activity = routine.activity
 
@@ -115,7 +126,7 @@ async def run_tick(
     if event_descriptions:
         situation = "Multiple things are happening:\n" + "\n---\n".join(event_descriptions)
     else:
-        situation = f"It is {sim_time}. You are {routine.activity} at {routine.location}. Nothing special is happening."
+        situation = f"It is {sim_time}. You are {state.current_activity} at {state.current_location}. Nothing special is happening."
 
     # 5. AI Decision Engine
     decision_result = await run_decision(
