@@ -661,7 +661,8 @@ class IsoScene extends Phaser.Scene {
         if (renderer._modalOpen || Date.now() - (renderer._modalJustClosed || 0) < 200) return;
         const charsHere = _rs.chars.filter(ch => {
           const m = _rs.moves.get(ch.id);
-          return m && b.keys.length > 0 && b.keys.some(k => (m.locStr||'').toLowerCase().includes(k));
+          if (!m || !m.locStr) return false;
+          return findBuilding(m.locStr) === b;
         }).map(ch => ({
           ...ch,
           activity: _rs.moves.get(ch.id)?.activity || '—',
