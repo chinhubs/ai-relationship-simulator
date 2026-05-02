@@ -33,43 +33,46 @@ def _build_volatile_prompt(
         for k in EMOTION_KEYS
     )
 
-    return f"""═══ CURRENT STATE ═══
-Day: {sim_day} | Time: {sim_time} | Location: {state.current_location}
-Activity: {state.current_activity}
-Overall mood: {mood_label}
+    return f"""═══ สถานะปัจจุบัน ═══
+วันที่: {sim_day} | เวลา: {sim_time} | สถานที่: {state.current_location}
+กิจกรรม: {state.current_activity}
+อารมณ์โดยรวม: {mood_label}
 
-Emotion levels:
+ระดับอารมณ์:
 {emotion_snapshot}
 
 {memory_context}
 
-═══ EVENT / SITUATION ═══
+═══ เหตุการณ์ / สถานการณ์ ═══
 {event_description}
 
-═══ YOUR TASK ═══
-As {character_name}, respond to this situation authentically.
+═══ สิ่งที่คุณต้องทำ ═══
+ในฐานะ{character_name} จงตอบสนองต่อสถานการณ์นี้อย่างแท้จริง
 
-Return a JSON object with exactly these keys:
+**สำคัญมาก: ตอบทุกฟิลด์เป็นภาษาไทยเท่านั้น** — ทั้ง decision, internal_monologue, memory_to_store และ growth_reflection
+
+ส่งกลับ JSON object ที่มีคีย์เหล่านี้พอดี:
 {{
-  "decision": "what you decide to do (1-2 sentences)",
-  "internal_monologue": "your inner thoughts (2-4 sentences, first person)",
-  "action_type": "one of: ignore / respond_message / initiate_contact / withdraw / confront / seek_comfort / work / rest / vent",
-  "message_to_send": "the actual message text if sending one, else null",
+  "decision": "สิ่งที่คุณตัดสินใจทำ (1-2 ประโยค ภาษาไทย)",
+  "internal_monologue": "ความคิดภายในของคุณ (2-4 ประโยค มุมมองบุคคลที่หนึ่ง ภาษาไทย)",
+  "action_type": "หนึ่งใน: ignore / respond_message / initiate_contact / withdraw / confront / seek_comfort / work / rest / vent",
+  "message_to_send": "ข้อความที่ส่งจริงหากต้องส่ง หรือ null",
   "emotion_delta": {{
-    "happiness": <float -20 to 20>,
-    "stress": <float -20 to 20>,
-    "anxiety": <float -20 to 20>,
-    "loneliness": <float -20 to 20>,
-    "trust": <float -20 to 20>,
-    "love": <float -20 to 20>,
-    "resentment": <float -20 to 20>,
-    "security": <float -20 to 20>,
-    "energy": <float -20 to 20>
+    "happiness": <float -20 ถึง 20>,
+    "stress": <float -20 ถึง 20>,
+    "anxiety": <float -20 ถึง 20>,
+    "loneliness": <float -20 ถึง 20>,
+    "trust": <float -20 ถึง 20>,
+    "love": <float -20 ถึง 20>,
+    "resentment": <float -20 ถึง 20>,
+    "security": <float -20 ถึง 20>,
+    "energy": <float -20 ถึง 20>
   }},
-  "memory_to_store": "one sentence summarizing what to remember from this event, or null"
+  "memory_to_store": "ประโยคเดียวสรุปสิ่งที่ต้องจำจากเหตุการณ์นี้ (ภาษาไทย) หรือ null",
+  "growth_reflection": "สิ่งที่คุณเรียนรู้หรือเปลี่ยนแปลงภายในจากประสบการณ์นี้ (ภาษาไทย 1 ประโยค) หรือ null"
 }}
 
-Return ONLY valid JSON. No markdown, no explanation.
+ส่งกลับเฉพาะ JSON ที่ถูกต้องเท่านั้น ไม่มี markdown ไม่มีคำอธิบาย
 """
 
 
@@ -85,12 +88,13 @@ def _parse_decision_response(raw: str) -> dict:
             except json.JSONDecodeError:
                 pass
     return {
-        "decision": "does nothing",
+        "decision": "ไม่ได้ทำอะไร",
         "internal_monologue": raw[:300] if raw else "...",
         "action_type": "ignore",
         "message_to_send": None,
         "emotion_delta": {k: 0.0 for k in EMOTION_KEYS},
         "memory_to_store": None,
+        "growth_reflection": None,
     }
 
 

@@ -106,6 +106,45 @@ async def get_emotional_memories(
     return list(result.scalars().all())
 
 
+async def get_semantic_memories(
+    db: AsyncSession,
+    character_id: int,
+    limit: int = 5,
+) -> list[Memory]:
+    """Retrieve learned patterns and growth insights (semantic layer)."""
+    query = (
+        select(Memory)
+        .where(
+            Memory.character_id == character_id,
+            Memory.layer == MemoryLayer.SEMANTIC.value,
+        )
+        .order_by(desc(Memory.importance_score), desc(Memory.created_at))
+        .limit(limit)
+    )
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
+async def get_memories_by_day(
+    db: AsyncSession,
+    character_id: int,
+    sim_day: int,
+    limit: int = 20,
+) -> list[Memory]:
+    """Retrieve all memories from a specific simulation day."""
+    query = (
+        select(Memory)
+        .where(
+            Memory.character_id == character_id,
+            Memory.sim_day == sim_day,
+        )
+        .order_by(Memory.created_at)
+        .limit(limit)
+    )
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
 async def build_memory_context(
     db: AsyncSession,
     character_id: int,
@@ -113,27 +152,33 @@ async def build_memory_context(
     related_character_id: int | None = None,
 ) -> str:
     """Build the memory section of the volatile prompt for the Brain call."""
-    short_term = await get_recent_memories(db, character_id, limit=8, layer=MemoryLayer.SHORT_TERM)
-    episodic = await get_recent_memories(db, character_id, limit=5, layer=MemoryLayer.EPISODIC)
-    emotional = await get_emotional_memories(db, character_id, related_character_id=related_character_id, limit=3)
+    short_term = await get_recent_memories(db, character_id, limit=10, layer=MemoryLayer.SHORT_TERM)
+    episodic   = await get_recent_memories(db, character_id, limit=6,  layer=MemoryLayer.EPISODIC)
+    emotional  = await get_emotional_memories(db, character_id, related_character_id=related_character_id, limit=4)
+    semantic   = await get_semantic_memories(db, character_id, limit=4)
 
-    lines = ["═══ MEMORY CONTEXT ═══"]
+    lines = ["═══ ความทรงจำ ═══"]
 
     if short_term:
-        lines.append("Recent events (today):")
+        lines.append("เหตุการณ์ล่าสุด (วันนี้):")
         for m in short_term:
             lines.append(f"  • [{m.sim_time or '?'}] {m.content}")
 
     if episodic:
-        lines.append("\nSignificant past memories:")
+        lines.append("\nความทรงจำสำคัญในอดีต:")
         for m in episodic:
-            lines.append(f"  • [Day {m.sim_day}] {m.content}")
+            lines.append(f"  • [วันที่ {m.sim_day}] {m.content}")
 
     if emotional:
-        lines.append("\nEmotionally significant memories:")
+        lines.append("\nความทรงจำที่ฝังใจ:")
         for m in emotional:
-            valence = "positive" if m.emotional_valence > 0 else "negative"
-            lines.append(f"  • ({valence}, intensity={m.emotional_intensity:.1f}) {m.content}")
+            mood = "เชิงบวก" if m.emotional_valence > 0 else "เชิงลบ"
+            lines.append(f"  • ({mood}, ความเข้ม={m.emotional_intensity:.1f}) {m.content}")
+
+    if semantic:
+        lines.append("\nสิ่งที่เรียนรู้และพัฒนาการของตัวเอง:")
+        for m in semantic:
+            lines.append(f"  • {m.content}")
 
     return "\n".join(lines)
 

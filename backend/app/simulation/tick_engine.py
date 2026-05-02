@@ -124,9 +124,9 @@ async def run_tick(
 
     # 4. Build situation description for Claude
     if event_descriptions:
-        situation = "Multiple things are happening:\n" + "\n---\n".join(event_descriptions)
+        situation = "มีหลายสิ่งที่เกิดขึ้น:\n" + "\n---\n".join(event_descriptions)
     else:
-        situation = f"It is {sim_time}. You are {state.current_activity} at {state.current_location}. Nothing special is happening."
+        situation = f"เวลา {sim_time} คุณกำลัง{state.current_activity} ที่ {state.current_location} ไม่มีเหตุการณ์พิเศษ"
 
     # 5. AI Decision Engine
     decision_result = await run_decision(
@@ -153,7 +153,7 @@ async def run_tick(
         for k, v in event_applied.items():
             setattr(state, k, v)
 
-    # 8. Store short-term memory if decision has something to remember
+    # 8. Store memories — short-term always; significant events to episodic; growth to semantic
     memory_text = decision_result.get("memory_to_store")
     if memory_text:
         await add_memory(
@@ -164,6 +164,37 @@ async def run_tick(
             emotional_valence=ai_delta.happiness,
             emotional_intensity=abs(ai_delta.happiness) / 20.0,
             importance_score=0.3,
+            sim_day=sim_day,
+            sim_time=sim_time,
+        )
+
+    # Auto-store significant emotional events to episodic memory
+    max_delta_val = max((abs(float(v)) for v in ai_delta_raw.values()), default=0.0)
+    if max_delta_val >= 10.0 and memory_text:
+        await add_memory(
+            db=db,
+            character_id=character_id,
+            content=memory_text,
+            layer=MemoryLayer.EPISODIC,
+            emotional_valence=ai_delta.happiness,
+            emotional_intensity=min(1.0, max_delta_val / 20.0),
+            importance_score=min(1.0, max_delta_val / 15.0),
+            related_character_id=related_character_id,
+            sim_day=sim_day,
+            sim_time=sim_time,
+        )
+
+    # Store growth reflection to semantic memory (character development/learning)
+    growth_note = decision_result.get("growth_reflection")
+    if growth_note and len(growth_note) > 8:
+        await add_memory(
+            db=db,
+            character_id=character_id,
+            content=growth_note,
+            layer=MemoryLayer.SEMANTIC,
+            emotional_valence=ai_delta.happiness,
+            emotional_intensity=0.5,
+            importance_score=0.7,
             sim_day=sim_day,
             sim_time=sim_time,
         )
@@ -265,6 +296,7 @@ async def run_tick(
         "action_type": action_type,
         "message_to_send": decision_result.get("generated_message"),
         "message_tone": decision_result.get("message_tone"),
+        "growth_reflection": decision_result.get("growth_reflection"),
         "events_processed": event_descriptions,
         "emotion_after": {k: getattr(state, k) for k in EMOTION_KEYS},
     }

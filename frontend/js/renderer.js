@@ -144,11 +144,21 @@ const CHAR_PALETTE = [
 
 const PET_PALETTE = [
   { body:0xd09050, dark:0x805028, eye:0x20c030 }, // orange tabby
+  { body:0xd87030, dark:0x903018, eye:0xf0a820 }, // ginger
+  { body:0xe8a060, dark:0xb07030, eye:0x30c040 }, // marmalade
   { body:0x303030, dark:0x181818, eye:0xf0d820 }, // black
-  { body:0xe0d8c8, dark:0xb09870, eye:0x20a8d8 }, // cream/white
-  { body:0x808070, dark:0x504840, eye:0x30d050 }, // gray
+  { body:0x585858, dark:0x303030, eye:0x70d050 }, // dark gray
+  { body:0x484840, dark:0x282820, eye:0xd8a020 }, // charcoal
+  { body:0xe0d8c8, dark:0xb09870, eye:0x20a8d8 }, // cream
+  { body:0xf0f0f8, dark:0xc8c0c0, eye:0xe080c8 }, // white
+  { body:0xd8d0c0, dark:0xb0a090, eye:0x20b8e8 }, // off-white
   { body:0xa07040, dark:0x604020, eye:0xd0a020 }, // brown
+  { body:0x805030, dark:0x502010, eye:0xc08020 }, // dark brown
+  { body:0xc8a878, dark:0x906048, eye:0x905820 }, // tan/beige
+  { body:0x808070, dark:0x504840, eye:0x30d050 }, // gray
+  { body:0xb0a890, dark:0x807860, eye:0x60d870 }, // silver
   { body:0xd0c088, dark:0xa08050, eye:0x38b828 }, // golden
+  { body:0xe8c8b0, dark:0xb88870, eye:0x20c8a0 }, // peach/apricot
 ];
 
 // ─── Colour helpers ───────────────────────────────────────────────────────────
@@ -349,11 +359,11 @@ class IsoScene extends Phaser.Scene {
       this._genSprite(`npc_${ni}_r`, d.shirt, d.pants, d.hair, true,  d.female);
       this._genSprite(`npc_${ni}_l`, d.shirt, d.pants, d.hair, false, d.female);
     }
-    // Pet textures
-    for (let ci = 0; ci < 6; ci++) {
+    // Pet textures (default palette, no species — used as NPC fallbacks)
+    for (let ci = 0; ci < PET_PALETTE.length; ci++) {
       const { body, dark, eye } = PET_PALETTE[ci];
-      this._genPetSprite(`pet_${ci}_r`, body, dark, eye, true);
-      this._genPetSprite(`pet_${ci}_l`, body, dark, eye, false);
+      this._genCatSprite(`pet_${ci}_r`, body, dark, eye, true);
+      this._genCatSprite(`pet_${ci}_l`, body, dark, eye, false);
     }
   }
 
@@ -364,12 +374,13 @@ class IsoScene extends Phaser.Scene {
       const app = ch.profile_extra?.appearance || {};
       const isPet = ch.character_type === 'pet';
       if (isPet) {
-        const pal  = PET_PALETTE[ci % 6];
-        const body = _parseColor(app.body_color) ?? pal.body;
-        const dark = _parseColor(app.dark_color)  ?? darken(body, 40);
-        const eye  = _parseColor(app.eye_color)   ?? pal.eye;
-        this._genPetSprite(`pet_${ch.id}_r`, body, dark, eye, true);
-        this._genPetSprite(`pet_${ch.id}_l`, body, dark, eye, false);
+        const pal     = PET_PALETTE[ci % PET_PALETTE.length];
+        const body    = _parseColor(app.body_color) ?? pal.body;
+        const dark    = _parseColor(app.dark_color)  ?? darken(body, 40);
+        const eye     = _parseColor(app.eye_color)   ?? pal.eye;
+        const species = (ch.profile_extra?.species || '');
+        this._genPetSprite(`pet_${ch.id}_r`, body, dark, eye, true,  species);
+        this._genPetSprite(`pet_${ch.id}_l`, body, dark, eye, false, species);
       } else {
         const pal      = CHAR_PALETTE[ci % 6];
         const shirt    = _parseColor(app.shirt)      ?? pal.shirt;
@@ -431,52 +442,200 @@ class IsoScene extends Phaser.Scene {
     g.destroy();
   }
 
-  _genPetSprite(key, body, dark, eyeColor, isRight) {
+  _genPetSprite(key, body, dark, eyeColor, isRight, species = '', spot = null) {
+    const s = (species || '').toLowerCase();
+    if (s.includes('dog') || s.includes('หมา') || s.includes('สุนัข'))
+      return this._genDogSprite(key, body, dark, eyeColor, isRight);
+    if (s.includes('rabbit') || s.includes('กระต่าย'))
+      return this._genRabbitSprite(key, body, dark, eyeColor, isRight);
+    if (s.includes('hamster') || s.includes('แฮมสเตอร์'))
+      return this._genHamsterSprite(key, body, dark, eyeColor, isRight);
+    if (s.includes('bird') || s.includes('นก') || s.includes('parakeet') || s.includes('parrot'))
+      return this._genBirdSprite(key, body, dark, eyeColor, isRight);
+    // default: cat
+    this._genCatSprite(key, body, dark, eyeColor, isRight);
+  }
+
+  _genCatSprite(key, body, dark, eyeColor, isRight) {
     const W = 16, H = 24;
     const g = this.make.graphics({ x:0, y:0, add:false });
     const light = lighten(body, 40);
-    // Shadow
     g.fillStyle(0x000000, 0.12); g.fillEllipse(8, 23, 12, 3);
-    // Tail (back of animal)
+    // Tail (curved side, opposite head direction)
     g.fillStyle(body);
-    if (isRight) { g.fillRect(0, 10, 3, 2); g.fillRect(0, 8, 2, 3); g.fillRect(1, 7, 2, 2); }
-    else         { g.fillRect(13, 10, 3, 2); g.fillRect(14, 8, 2, 3); g.fillRect(13, 7, 2, 2); }
+    if (isRight) { g.fillRect(0,10,3,2); g.fillRect(0,8,2,3); g.fillRect(1,7,2,2); }
+    else         { g.fillRect(13,10,3,2); g.fillRect(14,8,2,3); g.fillRect(13,7,2,2); }
     // Body
-    g.fillStyle(body);  g.fillRect(3, 11, 10, 7);
-    g.fillStyle(light); g.fillRect(5, 12, 6, 5); // tummy
-    // Head (on the side the animal is facing)
+    g.fillStyle(body);  g.fillRect(3,11,10,7);
+    g.fillStyle(light); g.fillRect(5,12,6,5);
+    // Head
     const hx = isRight ? 7 : 1;
-    g.fillStyle(body); g.fillRect(hx, 3, 8, 8);
-    // Pointed ears
+    g.fillStyle(body); g.fillRect(hx,3,8,8);
+    // Pointy ears
     g.fillStyle(dark);
-    g.fillTriangle(hx, 3, hx+2, 3, hx+1, 0);
-    g.fillTriangle(hx+5, 3, hx+7, 3, hx+6, 0);
-    g.fillStyle(lighten(dark, 60));
-    g.fillRect(hx, 1, 1, 2); g.fillRect(hx+5, 1, 1, 2);
+    g.fillTriangle(hx,3,hx+2,3,hx+1,0); g.fillTriangle(hx+5,3,hx+7,3,hx+6,0);
+    g.fillStyle(0xf8a0b8); g.fillRect(hx,1,1,2); g.fillRect(hx+5,1,1,2);
     // Eyes
-    g.fillStyle(eyeColor); g.fillRect(hx+2, 6, 1, 2); g.fillRect(hx+5, 6, 1, 2);
-    g.fillStyle(0x060404);  g.fillRect(hx+2, 7, 1, 1); g.fillRect(hx+5, 7, 1, 1);
+    g.fillStyle(eyeColor); g.fillRect(hx+2,6,1,2); g.fillRect(hx+5,6,1,2);
+    g.fillStyle(0x060404);  g.fillRect(hx+2,7,1,1); g.fillRect(hx+5,7,1,1);
     // Nose
-    g.fillStyle(0xd07878); g.fillRect(hx+3, 9, 2, 1);
+    g.fillStyle(0xd07878); g.fillRect(hx+3,9,2,1);
     // Whiskers
-    g.lineStyle(0.5, lighten(body, 60), 0.6);
+    g.lineStyle(0.5, lighten(body,60), 0.6);
     if (isRight) {
-      g.beginPath(); g.moveTo(hx, 9); g.lineTo(hx-3, 8); g.strokePath();
-      g.beginPath(); g.moveTo(hx, 10); g.lineTo(hx-3, 11); g.strokePath();
+      g.beginPath(); g.moveTo(hx,9); g.lineTo(hx-3,8); g.strokePath();
+      g.beginPath(); g.moveTo(hx,10); g.lineTo(hx-3,11); g.strokePath();
     } else {
-      g.beginPath(); g.moveTo(hx+8, 9); g.lineTo(hx+11, 8); g.strokePath();
-      g.beginPath(); g.moveTo(hx+8, 10); g.lineTo(hx+11, 11); g.strokePath();
+      g.beginPath(); g.moveTo(hx+8,9); g.lineTo(hx+11,8); g.strokePath();
+      g.beginPath(); g.moveTo(hx+8,10); g.lineTo(hx+11,11); g.strokePath();
     }
-    // Legs (4 stubby legs)
+    // Legs + paws
     g.fillStyle(body);
-    g.fillRect(3, 18, 2, 5); g.fillRect(6, 18, 2, 5);
-    g.fillRect(9, 18, 2, 5); g.fillRect(12, 18, 2, 5);
-    // Paws
+    g.fillRect(3,18,2,5); g.fillRect(6,18,2,5); g.fillRect(9,18,2,5); g.fillRect(12,18,2,5);
     g.fillStyle(dark);
-    g.fillRect(3, 22, 3, 2); g.fillRect(6, 22, 3, 2);
-    g.fillRect(9, 22, 3, 2); g.fillRect(12, 22, 3, 2);
-    g.generateTexture(key, W, H);
-    g.destroy();
+    g.fillRect(3,22,3,2); g.fillRect(6,22,3,2); g.fillRect(9,22,3,2); g.fillRect(12,22,3,2);
+    g.generateTexture(key, W, H); g.destroy();
+  }
+
+  _genDogSprite(key, body, dark, eyeColor, isRight) {
+    const W = 16, H = 24;
+    const g = this.make.graphics({ x:0, y:0, add:false });
+    const light = lighten(body, 40);
+    g.fillStyle(0x000000, 0.15); g.fillEllipse(8, 23, 14, 4);
+    // Upright tail (back of dog)
+    g.fillStyle(body);
+    if (isRight) { g.fillRect(0,9,2,7); g.fillRect(0,7,3,3); }
+    else         { g.fillRect(14,9,2,7); g.fillRect(13,7,3,3); }
+    // Body (stockier than cat)
+    g.fillStyle(body);  g.fillRect(2,12,12,8);
+    g.fillStyle(light); g.fillRect(4,13,8,6);
+    // Head (wider)
+    const hx = isRight ? 7 : 1;
+    g.fillStyle(body); g.fillRect(hx,3,8,9);
+    // Floppy ears (dark rectangles hanging beside head)
+    g.fillStyle(dark);
+    g.fillRect(hx-2,3,3,8);   // far ear
+    g.fillRect(hx+7,3,3,8);   // near ear
+    // Snout (rectangular protrusion)
+    g.fillStyle(lighten(body,15));
+    if (isRight) { g.fillRect(hx+5,7,4,4); }
+    else         { g.fillRect(Math.max(0,hx-3),7,4,4); }
+    // Nose (black dot on snout)
+    g.fillStyle(0x101010);
+    if (isRight) { g.fillRect(hx+7,7,2,2); }
+    else         { g.fillRect(Math.max(0,hx-2),7,2,2); }
+    // Eyes
+    g.fillStyle(eyeColor); g.fillRect(hx+1,6,2,2); g.fillRect(hx+4,6,2,2);
+    g.fillStyle(0x080404);  g.fillRect(hx+1,7,1,1); g.fillRect(hx+4,7,1,1);
+    // Legs (sturdier)
+    g.fillStyle(body);
+    g.fillRect(2,19,3,4); g.fillRect(6,19,3,4); g.fillRect(9,19,3,4); g.fillRect(12,19,3,4);
+    g.fillStyle(dark);
+    g.fillRect(2,22,4,2); g.fillRect(6,22,4,2); g.fillRect(9,22,4,2); g.fillRect(12,22,4,2);
+    g.generateTexture(key, W, H); g.destroy();
+  }
+
+  _genRabbitSprite(key, body, dark, eyeColor, isRight) {
+    const W = 16, H = 24;
+    const g = this.make.graphics({ x:0, y:0, add:false });
+    const light = lighten(body, 40);
+    g.fillStyle(0x000000, 0.10); g.fillEllipse(8, 23, 11, 3);
+    // Tail (tiny cotton ball at back)
+    g.fillStyle(0xf8f8f8);
+    if (isRight) { g.fillRect(1,16,3,3); }
+    else         { g.fillRect(12,16,3,3); }
+    // Body (round, compact)
+    g.fillStyle(body);  g.fillRect(3,15,10,7);
+    g.fillStyle(light); g.fillRect(5,16,6,5);
+    // Head
+    const hx = isRight ? 7 : 1;
+    g.fillStyle(body); g.fillRect(hx,8,8,9);
+    // Very tall upright ears (most distinctive)
+    g.fillStyle(body);
+    g.fillRect(hx+1,0,3,12); g.fillRect(hx+5,0,3,12);
+    g.fillStyle(0xf8b0c0);  // pink inner
+    g.fillRect(hx+2,1,1,10); g.fillRect(hx+5,1,1,10);
+    // Eyes (round, prominent)
+    g.fillStyle(eyeColor); g.fillRect(hx+1,10,2,2); g.fillRect(hx+4,10,2,2);
+    g.fillStyle(0x080404);  g.fillRect(hx+1,11,1,1); g.fillRect(hx+4,11,1,1);
+    // Nose (small, pink)
+    g.fillStyle(0xf080a0); g.fillRect(hx+3,14,2,1);
+    // Legs
+    g.fillStyle(body);
+    g.fillRect(3,21,3,3); g.fillRect(6,21,3,3); g.fillRect(10,21,3,3);
+    g.fillStyle(dark);
+    g.fillRect(3,23,4,1); g.fillRect(6,23,4,1); g.fillRect(10,23,4,1);
+    g.generateTexture(key, W, H); g.destroy();
+  }
+
+  _genHamsterSprite(key, body, dark, eyeColor, isRight) {
+    const W = 16, H = 24;
+    const g = this.make.graphics({ x:0, y:0, add:false });
+    const light = lighten(body, 40);
+    g.fillStyle(0x000000, 0.12); g.fillEllipse(8, 23, 15, 4);
+    // Tiny tail
+    g.fillStyle(lighten(body,30));
+    if (isRight) { g.fillRect(0,14,2,2); }
+    else         { g.fillRect(14,14,2,2); }
+    // Chubby round body (wider)
+    g.fillStyle(body);  g.fillRect(1,13,14,8);
+    g.fillStyle(light); g.fillRect(3,14,10,6);
+    // Head (blends with body, chubby cheeks)
+    const hx = isRight ? 6 : 2;
+    g.fillStyle(body); g.fillRect(hx,4,9,10);
+    // Chubby cheeks (lighter, wider than head)
+    g.fillStyle(lighten(body,20));
+    if (isRight) { g.fillRect(hx+7,7,3,5); }
+    else         { g.fillRect(hx-2,7,3,5); }
+    // Tiny round ears (button ears on top of head)
+    g.fillStyle(body); g.fillRect(hx+1,3,3,3); g.fillRect(hx+5,3,3,3);
+    g.fillStyle(0xf8a0a0); g.fillRect(hx+1,3,2,2); g.fillRect(hx+5,3,2,2);
+    // Eyes (round, bright)
+    g.fillStyle(eyeColor); g.fillRect(hx+2,7,2,2); g.fillRect(hx+5,7,2,2);
+    g.fillStyle(0x080404);  g.fillRect(hx+2,8,1,1); g.fillRect(hx+5,8,1,1);
+    // Tiny nose
+    g.fillStyle(0xe08080); g.fillRect(hx+3,11,3,1);
+    // Short stubby legs
+    g.fillStyle(body);
+    g.fillRect(3,20,3,3); g.fillRect(7,20,3,3); g.fillRect(11,20,3,3);
+    g.fillStyle(lighten(body,20));
+    g.fillRect(3,22,4,2); g.fillRect(7,22,4,2); g.fillRect(11,22,4,2);
+    g.generateTexture(key, W, H); g.destroy();
+  }
+
+  _genBirdSprite(key, body, dark, eyeColor, isRight) {
+    const W = 16, H = 24;
+    const g = this.make.graphics({ x:0, y:0, add:false });
+    const light = lighten(body, 50);
+    g.fillStyle(0x000000, 0.10); g.fillEllipse(8, 23, 8, 3);
+    // Tail feathers
+    g.fillStyle(dark);
+    if (isRight) { g.fillRect(0,13,4,8); g.fillRect(1,11,3,4); }
+    else         { g.fillRect(12,13,4,8); g.fillRect(12,11,3,4); }
+    g.fillStyle(body);
+    if (isRight) { g.fillRect(1,14,3,6); }
+    else         { g.fillRect(12,14,3,6); }
+    // Body (compact, oval)
+    g.fillStyle(body);  g.fillRect(4,10,8,10);
+    g.fillStyle(light); g.fillRect(5,12,6,7);
+    // Wing fold detail
+    g.fillStyle(dark); g.fillRect(4,11,7,2);
+    // Head (round)
+    const hx = isRight ? 8 : 4;
+    g.fillStyle(body); g.fillRect(hx,2,7,8);
+    // Beak (pointed)
+    g.fillStyle(0xf0c020);
+    if (isRight) { g.fillTriangle(hx+6,3,hx+10,5,hx+6,7); }
+    else         { g.fillTriangle(hx,3,hx-4,5,hx,7); }
+    // Eye + ring
+    g.fillStyle(0xffffff); g.fillRect(hx+2,4,3,3);
+    g.fillStyle(eyeColor); g.fillRect(hx+2,4,2,2);
+    g.fillStyle(0x080404); g.fillRect(hx+2,5,1,1);
+    // Feet
+    g.fillStyle(0x806010);
+    g.fillRect(6,19,2,4); g.fillRect(10,19,2,4);
+    g.fillRect(4,22,5,1); g.fillRect(8,22,5,1);
+    g.generateTexture(key, W, H); g.destroy();
   }
 
   // ── Car texture ─────────────────────────────────────────────────────────────

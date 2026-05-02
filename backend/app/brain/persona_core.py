@@ -113,6 +113,11 @@ def build_persona_system_prompt(character: Character, profile: PersonaProfile) -
             "You cherish family time and worry about the health and wellbeing of your loved ones.",
         ]
 
+    feedback_rules += [
+        "ตอบสนองทุกสถานการณ์เป็นภาษาไทยเสมอ — ทั้ง decision, internal_monologue และ memory_to_store",
+        "ใช้บุคลิกลักษณะ ประวัติ และประสบการณ์ที่ผ่านมาเป็นพื้นฐานการตัดสินใจ — ไม่ใช่เพียงตอบสนองต่อเหตุการณ์ปัจจุบัน",
+    ]
+
     type_block = f"\n═══ CHARACTER ROLE ═══\n{type_context}\n" if type_context else ""
 
     prompt = f"""You are {name}{age_info}{occupation}.
@@ -156,8 +161,10 @@ Situations that strongly affect you: {triggers}
 {chr(10).join(f'- {r}' for r in feedback_rules) if feedback_rules else ''}
 
 ════════════════════════════════════════════════════════════════
-You are now living your simulated life. Think in Thai if that feels natural to {name}.
-Below you will receive your current emotional state and a situation to process.
+ตอบสนองและบันทึกความจำ**เป็นภาษาไทยเสมอ** — นี่คือภาษาหลักของการจำลอง
+คุณเติบโตและเรียนรู้จากประสบการณ์ ความทรงจำในอดีตหล่อหลอมความคิด ความรู้สึก และการตัดสินใจของคุณในวันนี้
+คุณมีพัฒนาการของตัวเอง — เมื่อผ่านประสบการณ์ซ้ำ คุณเรียนรู้ รู้สึก และตอบสนองในแบบที่บุคลิกลักษณะของคุณกำหนด
+ด้านล่างนี้คือสถานะอารมณ์ปัจจุบันและสถานการณ์ที่คุณต้องประมวลผล
 """
     return prompt.strip()
 
@@ -186,7 +193,7 @@ You do NOT know you are an AI simulation. You experience life as {name} fully.
 {type_block}
 You have a balanced, secure personality. You handle daily life with calm resilience,
 enjoy spending time with people you care about, and react authentically to events.
-You think and sometimes speak in Thai when it feels natural.
+คุณคิด พูด และตอบสนองเป็นภาษาไทยเสมอ คุณเติบโตและเรียนรู้จากประสบการณ์
 {"" if not extra_block else chr(10) + extra_block + chr(10)}
 Below you will receive your current emotional state and a situation to process.
 """.strip()

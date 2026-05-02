@@ -85,35 +85,31 @@ def apply_delta(state: CharacterState, delta: EmotionDelta) -> dict[str, float]:
 def apply_activity_effects(activity: str, state: CharacterState) -> EmotionDelta:
     """Rules-based emotion changes from common daily activities."""
     delta = EmotionDelta()
+    a = activity.lower()
 
-    activity_lower = activity.lower()
+    if any(w in a for w in ["sleep","sleeping","rest","nap","นอน","หลับ","พักผ่อน","นอนหลับ","ง่วง"]):
+        delta.energy = 20.0; delta.stress = -5.0; delta.anxiety = -3.0
 
-    if any(word in activity_lower for word in ["sleep", "sleeping", "rest", "nap"]):
-        delta.energy = 20.0
-        delta.stress = -5.0
-        delta.anxiety = -3.0
+    elif any(w in a for w in ["work","meeting","deadline","ทำงาน","ประชุม","งาน","ออฟฟิศ","บริษัท"]):
+        delta.energy = -5.0; delta.stress = 8.0
 
-    elif any(word in activity_lower for word in ["work", "meeting", "deadline"]):
-        delta.energy = -5.0
-        delta.stress = 8.0
+    elif any(w in a for w in ["exercise","gym","run","sport","ออกกำลัง","วิ่ง","กีฬา","ฟิตเนส","ยืดเส้น"]):
+        delta.happiness = 5.0; delta.energy = 10.0; delta.stress = -8.0; delta.anxiety = -5.0
 
-    elif any(word in activity_lower for word in ["exercise", "gym", "run", "sport"]):
-        delta.happiness = 5.0
-        delta.energy = 10.0
-        delta.stress = -8.0
-        delta.anxiety = -5.0
+    elif any(w in a for w in ["eat","meal","food","lunch","dinner","breakfast","กิน","ทาน","อาหาร","ข้าว","มื้อ","ทานข้าว"]):
+        delta.happiness = 3.0; delta.energy = 5.0
 
-    elif any(word in activity_lower for word in ["eat", "meal", "food", "lunch", "dinner", "breakfast"]):
-        delta.happiness = 3.0
-        delta.energy = 5.0
+    elif any(w in a for w in ["chat","talk","call","friend","social","คุย","โทร","เพื่อน","สังสรรค์","พูดคุย"]):
+        delta.happiness = 5.0; delta.loneliness = -8.0
 
-    elif any(word in activity_lower for word in ["chat", "talk", "call", "friend", "social"]):
-        delta.happiness = 5.0
-        delta.loneliness = -8.0
+    elif any(w in a for w in ["alone","solitude","reading","relaxing","อ่าน","คนเดียว","ผ่อนคลาย","นั่งเล่น"]):
+        delta.energy = 5.0; delta.loneliness = 3.0
 
-    elif any(word in activity_lower for word in ["alone", "solitude", "reading", "relaxing"]):
-        delta.energy = 5.0
-        delta.loneliness = 3.0
+    elif any(w in a for w in ["shop","shopping","ช้อปปิ้ง","เดินห้าง","ซื้อของ"]):
+        delta.happiness = 4.0; delta.energy = -3.0
+
+    elif any(w in a for w in ["travel","commute","bts","รถไฟฟ้า","เดินทาง","นั่งรถ"]):
+        delta.energy = -3.0; delta.stress = 3.0
 
     return delta
 

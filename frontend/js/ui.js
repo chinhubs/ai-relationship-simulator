@@ -248,15 +248,21 @@ const HAIR_STYLES = [
   { key:'bun',  label:'มวยผม' },
 ];
 const PET_BODY_COLORS = [
-  { hex:'#d09050',label:'ส้ม' },    { hex:'#303030',label:'ดำ' },
-  { hex:'#e0d8c8',label:'ครีม' },   { hex:'#808070',label:'เทา' },
-  { hex:'#a07040',label:'น้ำตาล' }, { hex:'#d0c088',label:'ทอง' },
-  { hex:'#d04018',label:'แดงส้ม' }, { hex:'#f0ece0',label:'ขาว' },
+  { hex:'#d09050',label:'ส้มแท็บบี้' }, { hex:'#d87030',label:'ส้มเข้ม' },
+  { hex:'#e8a060',label:'มาร์มาเลด' },  { hex:'#303030',label:'ดำ' },
+  { hex:'#585858',label:'เทาเข้ม' },    { hex:'#484840',label:'ถ่าน' },
+  { hex:'#e0d8c8',label:'ครีม' },        { hex:'#f0f0f8',label:'ขาว' },
+  { hex:'#d8d0c0',label:'ขาวนวล' },     { hex:'#a07040',label:'น้ำตาล' },
+  { hex:'#805030',label:'น้ำตาลเข้ม' }, { hex:'#c8a878',label:'แทน' },
+  { hex:'#808070',label:'เทา' },         { hex:'#b0a890',label:'เงิน' },
+  { hex:'#d0c088',label:'ทอง' },         { hex:'#e8c8b0',label:'พีช' },
 ];
 const PET_EYE_COLORS = [
-  { hex:'#20c030',label:'เขียว' },  { hex:'#f0d820',label:'เหลือง' },
-  { hex:'#20a8d8',label:'ฟ้า' },    { hex:'#d0a020',label:'อำพัน' },
-  { hex:'#38b828',label:'เขียวสด' },{ hex:'#d86010',label:'ส้ม' },
+  { hex:'#20c030',label:'เขียว' },   { hex:'#38b828',label:'เขียวสด' },
+  { hex:'#f0d820',label:'เหลือง' },  { hex:'#d0a020',label:'อำพัน' },
+  { hex:'#20a8d8',label:'ฟ้า' },     { hex:'#20c8e8',label:'ฟ้าอ่อน' },
+  { hex:'#d86010',label:'ส้ม' },     { hex:'#e080c8',label:'ชมพู' },
+  { hex:'#905820',label:'น้ำตาล' },  { hex:'#60d870',label:'มรกต' },
 ];
 
 const ui = {
@@ -1012,6 +1018,7 @@ const ui = {
     if (isPet) {
       return `<div class="appearance-picker" id="${prefix}-appearance">
         <div class="ap-section-label">🎨 ลักษณะภายนอก</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-bottom:6px">รูปร่างตัวละครจะเปลี่ยนตามประเภทสัตว์ที่กรอกในช่อง "สายพันธุ์/ประเภท" (แมว/สุนัข/กระต่าย/แฮมสเตอร์/นก)</div>
         <div class="ap-row"><span class="ap-label">สีขน</span>
           <div class="ap-swatches">${PET_BODY_COLORS.map(c =>
             `<span class="color-swatch${appearance.body_color===c.hex?' swatch-sel':''}" data-field="body_color" data-color="${c.hex}" style="background:${c.hex}" title="${c.label}"></span>`
