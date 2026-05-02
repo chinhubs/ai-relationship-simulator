@@ -35,6 +35,69 @@ const EMOTION_CONFIG = [
   { key: "energy",     label: "Energy ⚡",     cls: "bar-energy" },
 ];
 
+const BUILDING_ROOMS = {
+  house:      [
+    { label: '🛏 ห้องนอน',         kw: ['นอน','sleep','rest','bedroom','ตื่น','ฝัน','หลับ'] },
+    { label: '🛋 ห้องนั่งเล่น',    kw: ['ดูทีวี','นั่งเล่น','อ่าน','ผ่อน','tv','living','relax'] },
+    { label: '🚿 ห้องน้ำ',         kw: ['อาบน้ำ','ห้องน้ำ','shower','bath','แปรง'] },
+    { label: '🍳 ห้องครัว',        kw: ['ทำอาหาร','กินข้าว','ทานข้าว','ครัว','cook','kitchen','eat','กิน','ทาน'] },
+  ],
+  office:     [
+    { label: '💻 โต๊ะทำงาน',       kw: ['ทำงาน','work','email','พิมพ์','code','โค้ด','computer'] },
+    { label: '📊 ห้องประชุม',      kw: ['ประชุม','meeting','present','นำเสนอ','discuss'] },
+    { label: '☕ ห้องพัก',         kw: ['พัก','กาแฟ','coffee','break','lunch','กินข้าว'] },
+    { label: '🏢 ล็อบบี้',         kw: ['ล็อบบี้','lobby','รอ','wait','arrive'] },
+  ],
+  hospital:   [
+    { label: '🏥 ห้องตรวจ',        kw: ['ตรวจ','check','consult','หมอ','doctor','นพ'] },
+    { label: '💊 ฉุกเฉิน',         kw: ['ฉุกเฉิน','emergency','urgent','acute'] },
+    { label: '🛏 พักฟื้น',         kw: ['พัก','นอน','rest','recover','ward'] },
+    { label: '⚗️ ห้องแล็บ',        kw: ['เลือด','lab','test','เอกซเรย์','xray','scan'] },
+  ],
+  mall:       [
+    { label: '🛍 ร้านค้า',         kw: ['ซื้อ','buy','shop','เดินห้าง','ช้อปปิ้ง','เลือก'] },
+    { label: '🍽 ฟู้ดคอร์ท',       kw: ['กิน','ทาน','food','court','อาหาร','eat'] },
+    { label: '🎬 โรงหนัง',         kw: ['หนัง','movie','cinema','ภาพยนตร์'] },
+    { label: '🧴 ซูเปอร์มาร์เก็ต', kw: ['super','market','ซุปเปอร์','ของชำ','grocery'] },
+  ],
+  cafe:       [
+    { label: '☕ บาร์กาแฟ',        kw: ['กาแฟ','coffee','ชา','tea','สั่ง','order'] },
+    { label: '🪑 โซนนั่ง',         kw: ['นั่ง','sit','ทำงาน','อ่าน','meet','study'] },
+  ],
+  restaurant: [
+    { label: '🍜 โซนอาหาร',        kw: ['กิน','ทาน','eat','food','สั่ง','order','อาหาร'] },
+    { label: '🧑‍🍳 ครัว',          kw: ['ครัว','cook','prepare','เตรียม'] },
+    { label: '🏮 ห้อง VIP',        kw: ['vip','private','ส่วนตัว','จอง'] },
+  ],
+  gym:        [
+    { label: '🏋 ยกน้ำหนัก',       kw: ['ยก','lift','weight','กล้าม','strength'] },
+    { label: '🏃 ลู่วิ่ง',         kw: ['วิ่ง','run','cardio','เดิน','treadmill'] },
+    { label: '🧘 โยคะ/ยืดเส้น',    kw: ['โยคะ','yoga','stretch','pilates','ยืด'] },
+    { label: '🚿 ห้องอาบน้ำ',      kw: ['อาบ','shower','locker'] },
+  ],
+  bank:       [
+    { label: '💰 เคาน์เตอร์',      kw: ['ฝาก','ถอน','โอน','deposit','withdraw','transfer'] },
+    { label: '🏧 ATM',             kw: ['atm','กด','เครื่อง','machine'] },
+    { label: '📋 ห้องผู้จัดการ',   kw: ['ผู้จัดการ','สินเชื่อ','loan','manager','apply'] },
+  ],
+  store:      [
+    { label: '🛒 ร้านค้า',         kw: [] },
+    { label: '🧾 แคชเชียร์',       kw: ['จ่าย','pay','ชำระ','checkout'] },
+  ],
+  gas:        [
+    { label: '⛽ หัวจ่ายน้ำมัน',   kw: ['เติม','น้ำมัน','fuel','fill','gasoline'] },
+    { label: '🏪 มินิมาร์ท',       kw: ['ซื้อ','buy','ร้าน','สะดวก'] },
+  ],
+  bts:        [
+    { label: '🚉 ชานชาลา',         kw: ['รอ','รถไฟ','train','wait','platform'] },
+    { label: '🎫 จุดตั๋ว',         kw: ['ตั๋ว','ticket','บัตร','card','top-up'] },
+  ],
+  park:       [
+    { label: '🌳 สวนหย่อม',        kw: [] },
+    { label: '🪑 ม้านั่ง',         kw: ['นั่ง','sit','พัก','rest','relax'] },
+  ],
+};
+
 const ui = {
   _dailyLog: [],         // [{simDay, simTime, charId, charName, avatar, activity, location, decision, isNotable, notableReason, events, actionType}]
   _activeCharFilter: null, // null = all characters
@@ -345,25 +408,46 @@ const ui = {
   },
 
   showLocationDetail(building, chars) {
-    const charRows = chars.length === 0
-      ? `<p class="muted" style="padding:8px 0">ไม่มีตัวละครอยู่ที่นี่ตอนนี้</p>`
-      : chars.map(ch => {
-          const emoIcon = this._dominantEmoIcon(ch.emotions);
-          const name = ch.nickname || ch.name;
-          const avatar = ch.avatar_emoji || (ch.character_type==='pet' ? '🐾' : (ch.gender==='female'?'👩':'👨'));
-          return `<div class="loc-char-row">
-            <span style="font-size:22px;margin-right:8px">${avatar}</span>
-            <div style="flex:1">
-              <div style="font-weight:bold;font-size:12px">${name} <span style="font-size:14px">${emoIcon}</span></div>
-              <div class="muted" style="font-size:11px">${ch.activity}</div>
-            </div>
-            <button class="btn-sim btn-blue" style="padding:3px 10px;font-size:10px" onclick="ui.followCharacter(${ch.id});ui.closeModal()">🎯 Follow</button>
-          </div>`;
-        }).join('');
+    const rooms = BUILDING_ROOMS[building.type] || [{ label: '📍 ภายใน', kw: [] }];
+
+    // Assign each character to the best matching room by activity keywords
+    const buckets = rooms.map(() => []);
+    for (const ch of chars) {
+      const act = (ch.activity || '').toLowerCase();
+      let placed = false;
+      for (let ri = 1; ri < rooms.length; ri++) {
+        if (rooms[ri].kw.some(k => act.includes(k))) {
+          buckets[ri].push(ch); placed = true; break;
+        }
+      }
+      if (!placed) buckets[0].push(ch);
+    }
+
+    const roomCards = rooms.map((room, ri) => {
+      const occupants = buckets[ri];
+      const charHtml = occupants.map(ch => {
+        const emoIcon = this._dominantEmoIcon(ch.emotions);
+        const name = ch.nickname || ch.name;
+        const avatar = ch.avatar_emoji || (ch.character_type==='pet' ? '🐾' : (ch.gender==='female'?'👩':'👨'));
+        return `<div class="room-char">
+          <span class="room-char-avatar">${avatar}</span>
+          <div class="room-char-info">
+            <div class="room-char-name">${name} ${emoIcon}</div>
+            <div class="room-char-act muted">${ch.activity}</div>
+          </div>
+          <button class="btn-sim btn-blue" style="padding:2px 7px;font-size:9px;min-width:0;flex-shrink:0" onclick="ui.followCharacter(${ch.id});ui.closeModal()">🎯</button>
+        </div>`;
+      }).join('');
+      return `<div class="indoor-room${occupants.length ? ' occupied' : ''}">
+        <div class="indoor-room-label">${room.label}${occupants.length ? ` <span class="room-count">${occupants.length}</span>` : ''}</div>
+        ${charHtml || '<div class="muted" style="font-size:10px;padding:3px 0">ว่าง</div>'}
+      </div>`;
+    }).join('');
+
     this.showModal(`
       <h2 style="color:var(--accent);margin-bottom:4px">${building.label}</h2>
-      <p class="muted" style="margin-bottom:12px;font-size:11px">ตัวละครที่นี่ตอนนี้ (${chars.length} คน)</p>
-      <div style="display:flex;flex-direction:column;gap:8px">${charRows}</div>
+      <p class="muted" style="margin-bottom:10px;font-size:11px">ภายในสถานที่ (${chars.length} คน)</p>
+      <div class="indoor-grid">${roomCards}</div>
     `);
   },
 

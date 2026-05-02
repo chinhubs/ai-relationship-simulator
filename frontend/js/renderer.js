@@ -88,6 +88,11 @@ const NPC_WPS = [
   [2,5],[4,5],[9,5],[11,5],[13,5],[2,7],[4,7],[9,7],
 ];
 
+// Indoor waypoints NPCs can visit (building interiors) — triggers fade-out
+const NPC_INDOOR_WPS = [
+  [1, 1], [4, 4], [10, 1], [4, 9], [4, 11], [11, 10], [10, 5],
+];
+
 // ─── Car definitions ──────────────────────────────────────────────────────────
 const CAR_COLORS = [
   [0xc83020,0x601008],[0x2858a0,0x183060],[0xb09018,0x504008],
@@ -150,6 +155,37 @@ class IsoScene extends Phaser.Scene {
     this._bubbleTexts = new Map();
 
     _rs._scene = this;
+
+    // Camera: mouse wheel zoom, drag to pan, double-click to reset
+    this._dragPan = null; this._didDrag = false; this._lastTap = 0;
+    this.input.on('wheel', (_ptr, _objs, _dx, dy) => {
+      const cam = this.cameras.main;
+      cam.zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.0007, 0.75, 2.5);
+    });
+    this.input.on('pointerdown', (ptr) => {
+      const now = Date.now();
+      if (now - this._lastTap < 280 && !this._didDrag) {
+        this.cameras.main.zoom = 1; this.cameras.main.setScroll(0, 0);
+      }
+      this._dragPan = { sx: this.cameras.main.scrollX, sy: this.cameras.main.scrollY, px: ptr.x, py: ptr.y };
+      this._didDrag = false;
+    });
+    this.input.on('pointermove', (ptr) => {
+      if (!this._dragPan || !ptr.isDown) return;
+      const dx = ptr.x - this._dragPan.px, dy = ptr.y - this._dragPan.py;
+      if (Math.hypot(dx, dy) > 8 || this._didDrag) {
+        this._didDrag = true;
+        const cam = this.cameras.main;
+        cam.scrollX = this._dragPan.sx - dx / cam.zoom;
+        cam.scrollY = this._dragPan.sy - dy / cam.zoom;
+      }
+    });
+    this.input.on('pointerup', () => {
+      if (!this._didDrag) this._lastTap = Date.now();
+      this._dragPan = null;
+      this.time.delayedCall(50, () => { this._didDrag = false; });
+    });
+
     // Chars may have been set before Phaser finished loading
     if (_rs.chars.length > 0) this.updateChars(_rs.chars);
     // Apply any pending moves
@@ -593,7 +629,8 @@ class IsoScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () => txt.setStyle({ color: '#ffe060' }))
       .on('pointerout',  () => txt.setStyle({ color: '#f8e8b0' }))
-      .on('pointerdown', () => {
+      .on('pointerup', () => {
+        if (this._didDrag) return;
         const charsHere = _rs.chars.filter(ch => {
           const m = _rs.moves.get(ch.id);
           return m && b.keys.length > 0 && b.keys.some(k => (m.locStr||'').toLowerCase().includes(k));
@@ -668,7 +705,7 @@ class IsoScene extends Phaser.Scene {
       const px = isoX(wp[0], wp[1]), py = isoY(wp[0], wp[1]);
       const sprite = this.add.image(px, py, `npc_${i}_r`).setOrigin(0.5, 0.95);
       sprite.setDepth(isoDepth(wp[0], wp[1], 50));
-      this._npcs.push({ sprite, px, py, tx:px, ty:py, wait:40*i, facingRight:true, def:NPC_DEFS[i], wpIdx:i });
+      this._npcs.push({ sprite, px, py, tx:px, ty:py, wait:40*i, facingRight:true, def:NPC_DEFS[i], wpIdx:i, isIndoor:false, _alpha:1 });
     }
   }
 
@@ -679,8 +716,16 @@ class IsoScene extends Phaser.Scene {
       const dx=npc.tx-npc.px, dy=npc.ty-npc.py, dist=Math.hypot(dx,dy);
       if (dist < 2) {
         npc.wait = 80 + Math.random()*120;
-        const wp = NPC_WPS[Math.random()*NPC_WPS.length|0];
-        npc.tx = isoX(wp[0],wp[1]); npc.ty = isoY(wp[0],wp[1]);
+        if (Math.random() < 0.25) {
+          // 25% chance NPC enters a building (fades out)
+          const wp = NPC_INDOOR_WPS[Math.random()*NPC_INDOOR_WPS.length|0];
+          npc.tx = isoX(wp[0],wp[1]); npc.ty = isoY(wp[0],wp[1]);
+          npc.isIndoor = true;
+        } else {
+          const wp = NPC_WPS[Math.random()*NPC_WPS.length|0];
+          npc.tx = isoX(wp[0],wp[1]); npc.ty = isoY(wp[0],wp[1]);
+          npc.isIndoor = false;
+        }
       } else {
         if (Math.abs(dx)>1) npc.facingRight = dx>0;
         npc.px += (dx/dist)*spd; npc.py += (dy/dist)*spd;
@@ -689,6 +734,10 @@ class IsoScene extends Phaser.Scene {
       }
       npc.sprite.setPosition(npc.px, npc.py);
       npc.sprite.setDepth(npc.py * 100 + 50);
+      // Fade in/out for indoor/outdoor transitions
+      const tA = npc.isIndoor ? 0 : 1;
+      npc._alpha = npc._alpha + (tA - npc._alpha) * 0.07;
+      npc.sprite.setAlpha(Math.max(0, Math.min(1, npc._alpha)));
     }
   }
 
@@ -742,7 +791,7 @@ class IsoScene extends Phaser.Scene {
         const spr= this.add.image(startX + i*10, startY, texKey).setOrigin(0.5, 0.95);
         spr.setDepth(startY*100+200);
         spr.setInteractive({ useHandCursor: true })
-          .on('pointerdown', () => { if (renderer.onCharacterClick) renderer.onCharacterClick(ch.id); });
+          .on('pointerup', () => { if (!this._didDrag && renderer.onCharacterClick) renderer.onCharacterClick(ch.id); });
         const lbl = this.add.text(startX+i*10, startY-30, ch.nickname||ch.name.split(' ')[0], {
           fontFamily:'monospace', fontSize:'9px', color:'#f8e898',
           stroke:'#1a0a04', strokeThickness:3, resolution:2,
@@ -752,6 +801,7 @@ class IsoScene extends Phaser.Scene {
           tx:startX+i*10, ty:startY, ci, g,
           facingRight:true,
           isIndoor: false, indoorBuilding: null, _alpha: 1,
+          isOnCar: false, carIdx: 0,
         });
       }
     }
@@ -760,30 +810,49 @@ class IsoScene extends Phaser.Scene {
   moveTo(charId, locStr) {
     const obj = this._charObjs.get(charId);
     if (!obj) return;
-    const b = findBuilding(locStr);
+    const activity = (_rs.moves.get(charId)?.activity || '').toLowerCase();
+    const loc = (locStr || '').toLowerCase();
     const idx = [...this._charObjs.keys()].indexOf(charId);
     const spread = (idx - (_rs.chars.length - 1) / 2) * 10;
 
-    if (b) {
-      // Indoor: walk to building entrance, then sprite fades out
-      obj.isIndoor = true;
-      obj.indoorBuilding = b;
-      const ent = bldgEntrance(b);
-      obj.tx = isoX(ent.c, ent.r) + spread;
-      obj.ty = isoY(ent.c, ent.r) - idx * 3;
-    } else {
-      // Outdoor: visible on a sidewalk tile
+    const CAR_KW = ['ขับรถ','นั่งรถ','ในรถ','driving','in a car','in car','taxi','grab','แท็กซี่','อูเบอร์','by car','commut'];
+    const isOnCar = CAR_KW.some(k => activity.includes(k) || loc.includes(k));
+
+    if (isOnCar) {
+      // Character is in/driving a car — sprite fades, name tag rides the car
+      obj.isOnCar = true;
       obj.isIndoor = false;
       obj.indoorBuilding = null;
-      const spot = OUTDOOR_SPOTS[idx % OUTDOOR_SPOTS.length];
-      obj.tx = isoX(spot.c, spot.r) + spread * 0.4;
-      obj.ty = isoY(spot.c, spot.r);
+      obj.carIdx = idx % Math.max(1, this._cars.length);
+    } else {
+      obj.isOnCar = false;
+      const b = findBuilding(locStr);
+      if (b) {
+        // Indoor: walk to building entrance, then sprite fades out
+        obj.isIndoor = true;
+        obj.indoorBuilding = b;
+        const ent = bldgEntrance(b);
+        obj.tx = isoX(ent.c, ent.r) + spread;
+        obj.ty = isoY(ent.c, ent.r) - idx * 3;
+      } else {
+        // Outdoor: visible on a sidewalk tile
+        obj.isIndoor = false;
+        obj.indoorBuilding = null;
+        const spot = OUTDOOR_SPOTS[idx % OUTDOOR_SPOTS.length];
+        obj.tx = isoX(spot.c, spot.r) + spread * 0.4;
+        obj.ty = isoY(spot.c, spot.r);
+      }
     }
   }
 
   _updateMainChars(delta) {
     const LERP = 0.055;
     for (const [id, obj] of this._charObjs) {
+      // Car-riding characters track the car's live position
+      if (obj.isOnCar) {
+        const car = this._cars[obj.carIdx ?? 0];
+        if (car) { obj.tx = car.sprite.x; obj.ty = car.sprite.y; }
+      }
       const dx=obj.tx-obj.px, dy=obj.ty-obj.py;
       if (Math.abs(dx)>1) obj.facingRight = dx>0;
       obj.px += dx*LERP; obj.py += dy*LERP;
@@ -801,7 +870,7 @@ class IsoScene extends Phaser.Scene {
         obj.sprite.setTexture(`char_${obj.ci}_${obj.facingRight?'r':'l'}_${g}`);
       }
       // Smooth fade: invisible when fully indoors, visible when outdoors
-      const targetAlpha = obj.isIndoor ? 0 : 1;
+      const targetAlpha = (obj.isIndoor || obj.isOnCar) ? 0 : 1;
       obj._alpha = (obj._alpha ?? 1) + (targetAlpha - (obj._alpha ?? 1)) * 0.07;
       const a = Math.max(0, Math.min(1, obj._alpha));
       obj.sprite.setAlpha(a);
@@ -871,6 +940,28 @@ class IsoScene extends Phaser.Scene {
         }
         tag.setPosition(bx, tagY).setText(`${avatar} ${name}`).setVisible(true);
       }
+    }
+
+    // Car name tags — float on car sprite for characters riding/driving
+    for (const [id, obj] of this._charObjs) {
+      if (!obj.isOnCar) continue;
+      const car = this._cars[obj.carIdx ?? 0];
+      if (!car) continue;
+      const ch = _rs.chars.find(c => c.id === id);
+      if (!ch) continue;
+      const avatar = ch.avatar_emoji || (ch.character_type === 'pet' ? '🐾' : '👤');
+      const name   = ch.nickname || ch.name.split(' ')[0];
+      const tagY   = car.sprite.y - 22 + Math.sin(this._tick * 0.025 + id * 0.7) * 1.5;
+      const poolKey = `car_${id}`;
+      let tag = this._indoorTagPool.get(poolKey);
+      if (!tag) {
+        tag = this.add.text(0, 0, '', {
+          fontFamily:'monospace', fontSize:'7px', color:'#e8f8ff',
+          backgroundColor:'#182848bb', padding:{x:3,y:2}, resolution:2,
+        }).setOrigin(0.5, 1).setDepth(510000);
+        this._indoorTagPool.set(poolKey, tag);
+      }
+      tag.setPosition(car.sprite.x, tagY).setText(`🚗 ${avatar}${name}`).setVisible(true);
     }
 
     // Follow ring around selected character
