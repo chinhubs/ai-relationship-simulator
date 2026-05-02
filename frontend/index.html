@@ -9,28 +9,68 @@
 <body>
   <div id="app">
 
-    <!-- Header -->
+    <!-- Drawer backdrop -->
+    <div id="drawer-overlay" onclick="ui.closeDrawer()"></div>
+
+    <!-- Side Drawer: Characters + Events -->
+    <div id="drawer">
+      <div class="drawer-header">
+        <span class="drawer-title">⚙ จัดการ</span>
+        <button class="btn-icon" onclick="ui.closeDrawer()">✕</button>
+      </div>
+
+      <div class="drawer-section">
+        <div class="drawer-section-title">👤 ตัวละคร</div>
+        <div id="character-list"></div>
+        <button id="btn-add-character" class="btn-primary btn-full" style="margin-top:6px">+ เพิ่มตัวละคร</button>
+      </div>
+
+      <div class="drawer-section">
+        <div class="drawer-section-title">⚡ ใส่เหตุการณ์</div>
+        <form id="event-form">
+          <select id="event-target" class="input-field"></select>
+          <input  id="event-title"       class="input-field" placeholder="ชื่อเหตุการณ์" required />
+          <textarea id="event-description" class="input-field" placeholder="เกิดอะไรขึ้น?" rows="3" required></textarea>
+          <select id="event-type" class="input-field">
+            <option value="confession">บอกรัก 💌</option>
+            <option value="argument">ทะเลาะกัน 😤</option>
+            <option value="gift">ของขวัญ 🎁</option>
+            <option value="ghosted">หายหัว 👻</option>
+            <option value="good_news">ข่าวดี 🎉</option>
+            <option value="bad_news">ข่าวร้าย 😢</option>
+            <option value="betrayal">ทรยศ 💔</option>
+            <option value="reconciliation">คืนดี 🤝</option>
+            <option value="surprise_visit">มาเยี่ยมแบบเซอร์ไพรส์ 🚪</option>
+          </select>
+          <select id="event-severity" class="input-field">
+            <option value="minor">เล็กน้อย</option>
+            <option value="moderate" selected>ปานกลาง</option>
+            <option value="major">หนัก</option>
+            <option value="critical">วิกฤต</option>
+          </select>
+          <button type="submit" class="btn-primary btn-full">💉 ใส่เหตุการณ์</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Header ── -->
     <header id="header">
       <div class="header-left">
+        <button id="btn-hamburger" class="btn-hamburger" title="ตัวละคร / เหตุการณ์">☰</button>
         <span class="logo-pixel">🌸</span>
         <h1>AI Relationship Simulator</h1>
       </div>
-      <div class="header-right">
+      <div class="header-center">
         <span id="sim-clock" class="pixel-text">วันที่ 1 · 06:00</span>
+      </div>
+      <div class="header-right">
         <button id="btn-music" class="btn-icon" title="เปิดดนตรี">🎵</button>
-        <button id="btn-help" class="btn-icon" title="Help">?</button>
+        <button id="btn-help"  class="btn-icon" title="Help">?</button>
       </div>
     </header>
 
-    <!-- Main layout -->
+    <!-- ── Main layout ── -->
     <main id="main-layout">
-
-      <!-- Left: Characters -->
-      <aside id="panel-characters">
-        <h2 class="panel-title">ตัวละคร</h2>
-        <div id="character-list"></div>
-        <button id="btn-add-character" class="btn-primary btn-full">+ เพิ่มตัวละคร</button>
-      </aside>
 
       <!-- Center: World canvas -->
       <section id="panel-world">
@@ -41,51 +81,23 @@
         <div id="sim-controls">
           <button id="btn-start" class="btn-sim btn-green">▶ เริ่ม</button>
           <button id="btn-pause" class="btn-sim btn-yellow" disabled>⏸ หยุด</button>
-          <button id="btn-tick" class="btn-sim btn-blue">⏭ Tick</button>
-          <button id="btn-stop" class="btn-sim btn-red" disabled>■ จบ</button>
+          <button id="btn-tick"  class="btn-sim btn-blue">⏭ Tick</button>
+          <button id="btn-stop"  class="btn-sim btn-red"  disabled>■ จบ</button>
         </div>
       </section>
 
-      <!-- Right: Status + Events -->
+      <!-- Right: Character state -->
       <aside id="panel-status">
-        <div id="character-state-panel">
-          <h2 class="panel-title">สถานะตัวละคร</h2>
-          <div id="selected-char-info">
-            <p class="muted">เลือกตัวละคร</p>
-          </div>
-          <div id="emotion-bars"></div>
+        <h2 class="panel-title">สถานะตัวละคร</h2>
+        <div id="selected-char-info">
+          <p class="muted">เลือกตัวละคร</p>
         </div>
-
-        <div id="event-panel" style="margin-top:12px">
-          <h2 class="panel-title">ใส่เหตุการณ์</h2>
-          <form id="event-form">
-            <select id="event-target" class="input-field"></select>
-            <input id="event-title" class="input-field" placeholder="ชื่อเหตุการณ์" required />
-            <textarea id="event-description" class="input-field" placeholder="เกิดอะไรขึ้น?" rows="3" required></textarea>
-            <select id="event-type" class="input-field">
-              <option value="confession">บอกรัก 💌</option>
-              <option value="argument">ทะเลาะกัน 😤</option>
-              <option value="gift">ของขวัญ 🎁</option>
-              <option value="ghosted">หายหัว 👻</option>
-              <option value="good_news">ข่าวดี 🎉</option>
-              <option value="bad_news">ข่าวร้าย 😢</option>
-              <option value="betrayal">ทรยศ 💔</option>
-              <option value="reconciliation">คืนดี 🤝</option>
-              <option value="surprise_visit">มาเยี่ยมแบบเซอร์ไพรส์ 🚪</option>
-            </select>
-            <select id="event-severity" class="input-field">
-              <option value="minor">เล็กน้อย</option>
-              <option value="moderate" selected>ปานกลาง</option>
-              <option value="major">หนัก</option>
-              <option value="critical">วิกฤต</option>
-            </select>
-            <button type="submit" class="btn-primary btn-full">💉 ใส่เหตุการณ์</button>
-          </form>
-        </div>
+        <div id="emotion-bars"></div>
       </aside>
+
     </main>
 
-    <!-- Activity Log -->
+    <!-- ── Activity Log ── -->
     <footer id="activity-log">
       <div id="log-panel">
         <h3>🔔 เหตุการณ์น่าสนใจ</h3>

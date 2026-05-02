@@ -221,9 +221,23 @@ const BUILDING_INTERIORS = {
 };
 
 const ui = {
-  _dailyLog: [],         // [{simDay, simTime, charId, charName, avatar, activity, location, decision, isNotable, notableReason, events, actionType}]
-  _activeCharFilter: null, // null = all characters
+  _dailyLog: [],
+  _activeCharFilter: null,
   _followId: null,
+
+  toggleDrawer() {
+    const d = document.getElementById('drawer');
+    const o = document.getElementById('drawer-overlay');
+    if (!d) return;
+    const open = d.classList.contains('open');
+    d.classList.toggle('open', !open);
+    o.classList.toggle('open', !open);
+  },
+
+  closeDrawer() {
+    document.getElementById('drawer')?.classList.remove('open');
+    document.getElementById('drawer-overlay')?.classList.remove('open');
+  },
 
   addDailyLogEntry(entry) {
     this._dailyLog.unshift(entry); // newest first

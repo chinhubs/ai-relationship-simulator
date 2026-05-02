@@ -30,6 +30,7 @@ const app = {
     document.getElementById("btn-stop").addEventListener("click",  () => { sim.stopWorld(); music.stop(); });
     document.getElementById("btn-tick").addEventListener("click",  () => sim.tick());
     document.getElementById("btn-music").addEventListener("click", () => music.toggle());
+    document.getElementById("btn-hamburger").addEventListener("click", () => ui.toggleDrawer());
     document.getElementById("btn-add-character").addEventListener("click", () => ui.showAddCharacterForm());
     document.getElementById("modal-close").addEventListener("click", () => ui.closeModal());
 

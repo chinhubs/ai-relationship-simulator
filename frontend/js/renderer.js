@@ -1329,6 +1329,36 @@ class IndoorScene extends Phaser.Scene {
     this._spawnAmbientNPCs(layout);
     this._spawnChars(layout);
     this._drawHeader(layout.title);
+
+    // ── Zoom & Pan (same pattern as IsoScene) ──────────────────────────────
+    this._dragPan = null; this._didDrag = false; this._lastTap = 0;
+    this.input.on('wheel', (_ptr, _objs, _dx, dy) => {
+      const cam = this.cameras.main;
+      cam.zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.001, 0.4, 3.0);
+    });
+    this.input.on('pointerdown', (ptr) => {
+      const now = Date.now();
+      if (now - this._lastTap < 280 && !this._didDrag) {
+        this.cameras.main.zoom = 1; this.cameras.main.setScroll(0, 0);
+      }
+      this._dragPan = { sx: this.cameras.main.scrollX, sy: this.cameras.main.scrollY, px: ptr.x, py: ptr.y };
+      this._didDrag = false;
+    });
+    this.input.on('pointermove', (ptr) => {
+      if (!this._dragPan || !ptr.isDown) return;
+      const dx = ptr.x - this._dragPan.px, dy = ptr.y - this._dragPan.py;
+      if (Math.hypot(dx, dy) > 8 || this._didDrag) {
+        this._didDrag = true;
+        const cam = this.cameras.main;
+        cam.scrollX = this._dragPan.sx - dx / cam.zoom;
+        cam.scrollY = this._dragPan.sy - dy / cam.zoom;
+      }
+    });
+    this.input.on('pointerup', () => {
+      if (!this._didDrag) this._lastTap = Date.now();
+      this._dragPan = null;
+      this.time.delayedCall(50, () => { this._didDrag = false; });
+    });
   }
 
   _drawRoom(room) {
@@ -1634,6 +1664,7 @@ class IndoorScene extends Phaser.Scene {
       .on('pointerover', () => back.setStyle({ color:'#ffffff' }))
       .on('pointerout',  () => back.setStyle({ color:'#f0c040' }))
       .on('pointerup',   () => {
+        if (this._didDrag) return;
         this.scene.stop();
         this.scene.wake('IsoScene');
         const iso = this.scene.get('IsoScene');
