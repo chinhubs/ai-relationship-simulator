@@ -1,9 +1,21 @@
+import json
+import re
+import logging
 import openai
 from .config import settings
 
-_client: openai.AsyncOpenAI | None = None
+logger = logging.getLogger(__name__)
 
-MODEL = "gpt-4o"
+# Ordered by preference: best quality → most universally available
+_MODEL_FALLBACK = [
+    "gpt-4o-mini",
+    "gpt-4.1-mini",
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-0125",
+]
+
+_client: openai.AsyncOpenAI | None = None
+_resolved_model: str | None = None
 
 
 def get_claude_client() -> openai.AsyncOpenAI:
@@ -13,6 +25,46 @@ def get_claude_client() -> openai.AsyncOpenAI:
     return _client
 
 
+def _is_model_access_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return "model_not_found" in msg or "does not have access to model" in msg
+
+
+async def _call_with_fallback(messages: list[dict], max_tokens: int) -> str:
+    """Try configured model first, then fall back through the list."""
+    global _resolved_model
+    client = get_claude_client()
+
+    # Build candidate list: configured model first, then fallbacks (dedup)
+    preferred = settings.openai_model
+    candidates = [preferred] + [m for m in _MODEL_FALLBACK if m != preferred]
+
+    # If we already found a working model this session, skip to it
+    if _resolved_model and _resolved_model in candidates:
+        candidates = [_resolved_model] + [m for m in candidates if m != _resolved_model]
+
+    last_exc = None
+    for model in candidates:
+        try:
+            response = await client.chat.completions.create(
+                model=model,
+                max_tokens=max_tokens,
+                messages=messages,
+            )
+            if _resolved_model != model:
+                _resolved_model = model
+                logger.info("Using OpenAI model: %s", model)
+            return response.choices[0].message.content or ""
+        except Exception as exc:
+            if _is_model_access_error(exc):
+                logger.warning("Model %s not accessible, trying next...", model)
+                last_exc = exc
+                continue
+            raise  # non-access errors bubble up immediately
+
+    raise RuntimeError(f"No accessible OpenAI model found. Last error: {last_exc}")
+
+
 async def call_brain(
     system_prompt: str,
     user_message: str,
@@ -20,16 +72,13 @@ async def call_brain(
     cache_persona: bool = True,
     max_tokens: int = 2048,
 ) -> str:
-    client = get_claude_client()
-    response = await client.chat.completions.create(
-        model=MODEL,
-        max_tokens=max_tokens,
+    return await _call_with_fallback(
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
+            {"role": "user",   "content": user_message},
         ],
+        max_tokens=max_tokens,
     )
-    return response.choices[0].message.content or ""
 
 
 async def call_brain_stream(
@@ -40,13 +89,14 @@ async def call_brain_stream(
     max_tokens: int = 4096,
 ):
     client = get_claude_client()
+    model = _resolved_model or settings.openai_model
     stream = await client.chat.completions.create(
-        model=MODEL,
+        model=model,
         max_tokens=max_tokens,
         stream=True,
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
+            {"role": "user",   "content": user_message},
         ],
     )
     async for chunk in stream:
@@ -56,7 +106,6 @@ async def call_brain_stream(
 
 
 async def analyze_persona_answers(answers_json: str) -> dict:
-    client = get_claude_client()
     system = (
         "You are a clinical psychologist specializing in attachment theory and personality modeling. "
         "Analyze questionnaire answers and return a JSON object with these exact keys:\n"
@@ -64,11 +113,10 @@ async def analyze_persona_answers(answers_json: str) -> dict:
         "conflict_behavior, love_languages, trigger_points, daily_life_patterns, "
         "core_values, boundaries\n"
         "Each key maps to an object with 'summary' (string) and 'traits' (list of strings). "
-        "Also include 'attachment_scores': {secure, anxious, avoidant, fearful_avoidant} as 0-100 values summing to 100."
+        "Also include 'attachment_scores': {secure, anxious, avoidant, fearful_avoidant} "
+        "as 0-100 values summing to 100."
     )
-    response = await client.chat.completions.create(
-        model=MODEL,
-        max_tokens=3000,
+    text = await _call_with_fallback(
         messages=[
             {"role": "system", "content": system},
             {
@@ -76,9 +124,8 @@ async def analyze_persona_answers(answers_json: str) -> dict:
                 "content": f"Questionnaire answers (JSON):\n{answers_json}\n\nReturn only valid JSON, no markdown.",
             },
         ],
+        max_tokens=3000,
     )
-    import json, re
-    text = response.choices[0].message.content or ""
     try:
         return json.loads(text)
     except json.JSONDecodeError:
