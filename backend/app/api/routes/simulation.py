@@ -53,6 +53,8 @@ async def execute_tick(
         raise HTTPException(status_code=404, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {str(e)[:300]}")
 
 
 @router.get("/{character_id}/state", response_model=CharacterStateRead)
