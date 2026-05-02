@@ -25,10 +25,11 @@ const app = {
   },
 
   bindButtons() {
-    document.getElementById("btn-start").addEventListener("click", () => sim.startWorld());
+    document.getElementById("btn-start").addEventListener("click", () => { sim.startWorld(); music.start(); });
     document.getElementById("btn-pause").addEventListener("click", () => sim.pauseWorld());
-    document.getElementById("btn-stop").addEventListener("click",  () => sim.stopWorld());
+    document.getElementById("btn-stop").addEventListener("click",  () => { sim.stopWorld(); music.stop(); });
     document.getElementById("btn-tick").addEventListener("click",  () => sim.tick());
+    document.getElementById("btn-music").addEventListener("click", () => music.toggle());
     document.getElementById("btn-add-character").addEventListener("click", () => ui.showAddCharacterForm());
     document.getElementById("modal-close").addEventListener("click", () => ui.closeModal());
 

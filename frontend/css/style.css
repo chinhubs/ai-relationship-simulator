@@ -190,6 +190,10 @@ aside {
   border-radius: 4px; cursor: pointer; font-size: 13px;
   box-shadow: 1px 2px 0 rgba(0,0,0,0.14);
 }
+#btn-music.music-on {
+  background: #3a6030; border-color: #204018; color: #fff;
+  box-shadow: 0 0 6px rgba(90,140,74,0.5);
+}
 
 /* ── Activity Log ─────────────────────────────────────────────────────────── */
 #activity-log {
